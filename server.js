@@ -158,12 +158,16 @@ Your goal is to repair the file permanently to prevent this error.`;
       aiInstruction = `
 The user has manually requested a new feature or change. 
 USER REQUEST: "${userPrompt}"
-Your goal is to implement this feature perfectly in the file.`;
+
+CRITICAL INSTRUCTIONS:
+1. WRITE COMPLETE, PRODUCTION-READY CODE. Do not write simple placeholders or basic HTML.
+2. USE PREMIUM MODERN DESIGN. If building UI components (like a Login page), use beautiful, modern aesthetics (glassmorphism, soft shadows, vibrant gradients, dark mode, smooth micro-animations). 
+3. DO NOT IMPORT NON-EXISTENT FILES. If asked to build a multi-page app, build all the components (Home, Login, Signup) directly inside this file and use state to toggle between them. Do not assume 'Login.jsx' exists.
+4. MAKE IT WOW THE USER. Go above and beyond to make the code fully functional and visually stunning!`;
     } else {
       return res.status(400).json({ success: false, explanation: 'Provide either an error or a prompt.' });
     }
 
-    // Fetch File Content if not provided
     let actualFileContent = fileContent;
     if (!actualFileContent) {
       const relativeFileMap = {
