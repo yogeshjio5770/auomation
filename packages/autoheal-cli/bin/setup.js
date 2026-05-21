@@ -856,7 +856,18 @@ async function main() {
 
   // Backend URL is fixed — same master server for every user
   const masterUrl = 'https://autoheal-4p4q.onrender.com';
-  const siteId = await ask('Website URL (e.g. https://my-site.com)', 'my-awesome-startup');
+  
+  // Auto-detect the Site URL from Vercel deployment if available
+  let siteId = result.vercelProjectUrl;
+  if (siteId && !siteId.startsWith('http')) {
+    siteId = 'https://' + siteId;
+  }
+  
+  if (!siteId) {
+    siteId = await ask('Website URL (e.g. https://my-site.com)', 'my-awesome-startup');
+  } else {
+    console.log(`  ${green('✓')} Auto-detected Site URL from Vercel: ${cyan(siteId)}`);
+  }
 
   const spinner = createSpinner('Installing libraries & writing config…');
 
