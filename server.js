@@ -131,15 +131,18 @@ app.post('/api/generate-patch', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const site = await getSiteData(siteId);
 
+  const provider = site.settings?.modelProvider || 'groq';
+  const groqKey = site.settings?.groqKey || process.env.GROQ_API_KEY;
   const geminiKey = site.settings?.geminiKey || process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
+
+  if (provider === 'groq' && !groqKey) {
+    return res.status(400).json({ success: false, explanation: 'Groq API Key is not configured for this site.' });
+  }
+  if (provider === 'gemini' && !geminiKey) {
     return res.status(400).json({ success: false, explanation: 'Gemini API Key is not configured for this site.' });
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
     let aiInstruction = '';
     if (error) {
       aiInstruction = `
@@ -208,8 +211,35 @@ Your response must be a valid JSON object only, with no markdown styling blocks 
 Ensure your output is strictly valid JSON. Double-check that all strings are escaped correctly.
 `.trim();
 
-    const response = await model.generateContent(fullPrompt);
-    const text = response.response.text().trim();
+    let text = '';
+    
+    if (provider === 'groq') {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama3-70b-8192',
+          messages: [
+            { role: 'system', content: 'You are an autonomous debugging agent. Output strictly valid JSON conforming exactly to the user schema.' },
+            { role: 'user', content: fullPrompt }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.1
+        })
+      });
+
+      if (!response.ok) throw new Error(`Groq API returned ${response.status}`);
+      const resData = await response.json();
+      text = resData.choices[0].message.content.trim();
+    } else {
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const response = await model.generateContent(fullPrompt);
+      text = response.response.text().trim();
+    }
     
     const cleaned = text
       .replace(/^```json/i, '')
