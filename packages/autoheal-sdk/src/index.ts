@@ -146,3 +146,10 @@ export const AutoHeal = new AutoHealSDK();
 export { patcherInstance, emailerInstance, widgetInstance, dashboardInstance };
 export type { ErrorData };
 
+// Auto-initialize if loaded directly in browser as a script and AUTOHEAL_SITE_ID is present
+if (typeof window !== 'undefined' && (window as any).AUTOHEAL_SITE_ID) {
+  // Use a slight delay to ensure DOM is ready
+  setTimeout(() => {
+    AutoHeal.init({});
+  }, 100);
+}
