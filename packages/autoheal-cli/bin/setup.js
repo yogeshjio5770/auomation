@@ -991,6 +991,17 @@ async function main() {
     console.log(`  ${yellow('⚠')} No index.html found automatically. Paste this into your HTML <head>:`);
     console.log();
     console.log(dim(snippet.split('\n').map(l => '      ' + l).join('\n')));
+  } else {
+    // Automatically commit and push the injected HTML
+    try {
+      console.log();
+      console.log(dim('  Committing AutoHeal injection to GitHub...'));
+      const { execSync } = require('child_process');
+      execSync('git add . && git commit -m "chore: auto-inject AutoHeal SDK" && git push', { stdio: 'ignore' });
+      console.log(`  ${green('✓')} Code pushed to GitHub! Vercel is now deploying your site.`);
+    } catch (err) {
+      console.log(`  ${yellow('⚠')} Could not auto-push to GitHub. You may need to run 'git push' manually.`);
+    }
   }
 
   // ── SUCCESS SUMMARY ───────────────────────────────────────────────────────
