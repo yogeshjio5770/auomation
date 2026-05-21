@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://autoheal-4p4q.onrender.com';
+// Master server URL — same for every user, no configuration needed
+const BACKEND_URL = 'https://autoheal-4p4q.onrender.com';
 
 // ─── HOW IT WORKS STEPS ─────────────────────────────────────────────────────
 const STEPS = [

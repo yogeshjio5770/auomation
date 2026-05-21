@@ -859,7 +859,8 @@ async function main() {
   console.log(hr());
   console.log();
 
-  const masterUrl = await ask('AutoHeal Master Server URL', 'https://autoheal.onrender.com');
+  // Backend URL is fixed — same master server for every user
+  const masterUrl = 'https://autoheal-4p4q.onrender.com';
   const siteId = await ask('Project Name (Site ID)', 'my-awesome-startup');
 
   const spinner = createSpinner('Writing config files…');
@@ -875,6 +876,8 @@ async function main() {
     n8nWebhook:       result.n8nWebhook,
     dbEnabled:        result.dbEnabled,
     dbUrl:            result.dbUrl,
+    siteId:           siteId,
+    masterUrl:        masterUrl,
   });
 
   // Write .env.local (secrets)
@@ -901,9 +904,9 @@ async function main() {
   spinner.succeed(`Config saved to ${bold('.autoheal.json')} and ${bold('.env.local')}`);
 
   if (syncedToServer) {
-    console.log(`  ${green('✓')} Settings securely synced to Master Server (${cyan(masterUrl)})`);
+    console.log(`  ${green('✓')} Settings securely synced to AutoHeal Master Server`);
   } else {
-    console.log(`  ${yellow('⚠')} Could not sync settings to Master Server. You may need to enter them manually.`);
+    console.log(`  ${yellow('⚠')} Could not sync to Master Server — credentials will work after server restarts.`);
   }
 
   // Check if .gitignore already has .env.local
@@ -915,6 +918,67 @@ async function main() {
     console.log(`  ${green('✓')} Added ${bold('.env.local')} and ${bold('.autoheal.json')} to .gitignore`);
   }
 
+  // ── AUTO-INJECT SNIPPET INTO index.html ────────────────────────────────────
+  console.log();
+  console.log(dim('  Searching for index.html to auto-inject AutoHeal snippet...'));
+
+  const snippet = [
+    '    <!-- AutoHeal SDK: AI-powered self-healing -->',
+    '    <script>',
+    `      window.AUTOHEAL_SITE_ID = "${siteId}";`,
+    `      window.AUTOHEAL_ENDPOINT = "${masterUrl}";`,
+    '    </script>',
+    `    <script src="${masterUrl}/sdk/autoheal.js"></script>`,
+  ].join('\n');
+
+  const searchDirs = ['.', 'public', 'src', 'static', 'dist', 'www'];
+  const htmlNames  = ['index.html', 'index.htm'];
+  let injected = false;
+
+  for (const dir of searchDirs) {
+    for (const fname of htmlNames) {
+      const htmlPath = path.join(process.cwd(), dir, fname);
+      if (!fs.existsSync(htmlPath)) continue;
+      try {
+        let html = fs.readFileSync(htmlPath, 'utf8');
+        if (html.includes('AUTOHEAL_SITE_ID')) {
+          // Already has a snippet — update the site ID and URL
+          html = html.replace(
+            /window\.AUTOHEAL_SITE_ID\s*=\s*"[^"]*"/,
+            `window.AUTOHEAL_SITE_ID = "${siteId}"`
+          ).replace(
+            /window\.AUTOHEAL_ENDPOINT\s*=\s*"[^"]*"/,
+            `window.AUTOHEAL_ENDPOINT = "${masterUrl}"`
+          ).replace(
+            /<script src="[^"]*\/sdk\/autoheal\.js"><\/script>/,
+            `<script src="${masterUrl}/sdk/autoheal.js"></script>`
+          );
+          fs.writeFileSync(htmlPath, html, 'utf8');
+          console.log(`  ${green('✓')} Updated existing AutoHeal snippet in ${bold(path.relative(process.cwd(), htmlPath))}`);
+          injected = true;
+          break;
+        }
+        // Inject before </head>
+        if (html.includes('</head>')) {
+          html = html.replace('</head>', `${snippet}\n  </head>`);
+          fs.writeFileSync(htmlPath, html, 'utf8');
+          console.log(`  ${green('✓')} Auto-injected AutoHeal snippet into ${bold(path.relative(process.cwd(), htmlPath))}`);
+          injected = true;
+          break;
+        }
+      } catch (e) {
+        console.log(`  ${yellow('⚠')} Could not write to ${htmlPath}: ${e.message}`);
+      }
+    }
+    if (injected) break;
+  }
+
+  if (!injected) {
+    console.log(`  ${yellow('⚠')} No index.html found automatically. Paste this into your HTML <head>:`);
+    console.log();
+    console.log(dim(snippet.split('\n').map(l => '      ' + l).join('\n')));
+  }
+
   // ── SUCCESS SUMMARY ───────────────────────────────────────────────────────
   console.log();
   console.log(hr('═'));
@@ -923,11 +987,11 @@ async function main() {
   console.log();
 
   const rows = [
+    ['Site ID',      siteId],
     ['GitHub',       result.githubRepo     ? `github.com/${result.githubRepo}` : '—'],
     ['Branch',       result.githubBranch   || 'main'],
     ['Vercel',       result.vercelProjectUrl || (result.vercelToken ? 'Token saved' : '—')],
-    ['Deploy Hook',  result.vercelDeployHook ? '✓ Configured' : '— (skipped)'],
-    ['N8N Webhook',  result.n8nWebhook      || '—'],
+    ['Master Server', masterUrl],
   ];
 
   for (const [label, value] of rows) {
@@ -937,13 +1001,12 @@ async function main() {
   console.log();
   console.log(hr());
   console.log();
-  console.log(bold('  What happens now:'));
-  console.log(`  ${cyan('1.')} Every AutoHeal fix is ${bold('auto-committed')} to GitHub`);
-  console.log(`  ${cyan('2.')} GitHub commit ${bold('triggers Vercel/Render rebuild')}`);
-  console.log(`  ${cyan('3.')} Your live website ${bold('heals itself automatically')}`);
-  console.log();
-  console.log(`  ${dim('Run your dev server:')} ${bold(cyan('npm run dev'))}`);
-  console.log(`  ${dim('Re-run this wizard:')} ${bold(cyan('npx @autoheal/setup'))}`);
+  console.log(bold('  What happens now — fully automatic:'));
+  console.log(`  ${cyan('1.')} AutoHeal snippet is ${bold('already in your HTML')} — zero manual steps`);
+  console.log(`  ${cyan('2.')} Errors on your site are ${bold('caught automatically')}`);
+  console.log(`  ${cyan('3.')} AI writes a fix and ${bold('commits to GitHub')}`);
+  console.log(`  ${cyan('4.')} Vercel detects the push and ${bold('auto-redeploys your site')}`);
+  console.log(`  ${cyan('5.')} Your site ${bold('heals itself')} — no action needed from you`);
   console.log();
   console.log(cyan('  ╔═══════════════════════════════════════════╗'));
   console.log(cyan('  ║') + bold('   🚀  Your site now heals itself!         ') + cyan('║'));
