@@ -225,7 +225,7 @@ Ensure your output is strictly valid JSON. Double-check that all strings are esc
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: 'You are an autonomous debugging agent. Output strictly valid JSON conforming exactly to the user schema.' },
             { role: 'user', content: fullPrompt }
@@ -235,7 +235,11 @@ Ensure your output is strictly valid JSON. Double-check that all strings are esc
         })
       });
 
-      if (!response.ok) throw new Error(`Groq API returned ${response.status}`);
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('Groq Error:', errText);
+        throw new Error(`Groq API returned ${response.status}: ${errText}`);
+      }
       const resData = await response.json();
       text = resData.choices[0].message.content.trim();
     } else {
