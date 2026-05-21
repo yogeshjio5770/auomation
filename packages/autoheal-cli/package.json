@@ -1,0 +1,24 @@
+{
+  "name": "@autoheal/setup",
+  "version": "1.0.0",
+  "description": "AutoHeal interactive setup wizard — GitHub, Vercel & N8N in 60 seconds",
+  "main": "bin/setup.js",
+  "bin": {
+    "autoheal-setup": "bin/setup.js"
+  },
+  "scripts": {
+    "start": "node bin/setup.js"
+  },
+  "keywords": [
+    "autoheal",
+    "setup",
+    "cli",
+    "github",
+    "vercel",
+    "n8n"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

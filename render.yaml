@@ -1,0 +1,23 @@
+services:
+  # Backend API Service
+  - type: web
+    name: autoheal-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+
+  # Frontend static web site
+  - type: web
+    name: autoheal-dashboard
+    runtime: static
+    buildCommand: npm install && npm run build:playground
+    staticPublishPath: playground/dist
+    routes:
+      - type: rewrite
+        path: /*
+        destination: /index.html

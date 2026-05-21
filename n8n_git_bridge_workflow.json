@@ -1,0 +1,86 @@
+{
+  "name": "AutoHeal Dynamic Multi-Tenant Git Bridge",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "autoheal-patch-handler",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "🔗 AutoHeal Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = items[0].json.body;\nif (!payload || !payload.githubToken || !payload.githubRepo) {\n  return [{ json: { success: false, error: 'Missing githubToken or githubRepo parameters.' } }];\n}\n\nconst { file, content, commitMessage, branch, githubRepo, githubToken, vercelDeployHook } = payload;\nconst repoBranch = branch || 'main';\n\ntry {\n  // 1. Fetch file content metadata to retrieve the current SHA (needed for updates)\n  const getRes = await fetch(`https://api.github.com/repos/${githubRepo}/contents/${file}?ref=${repoBranch}`, {\n    headers: {\n      'Authorization': `token ${githubToken}`,\n      'User-Agent': 'autoheal-n8n-bridge',\n      'Accept': 'application/vnd.github.v3+json'\n    }\n  });\n\n  let currentSha = null;\n  if (getRes.status === 200) {\n    const fileData = await getRes.json();\n    currentSha = fileData.sha;\n  }\n\n  // 2. Push the commit to GitHub with base64 encoded content\n  const base64Content = Buffer.from(content).toString('base64');\n  const putRes = await fetch(`https://api.github.com/repos/${githubRepo}/contents/${file}`, {\n    method: 'PUT',\n    headers: {\n      'Authorization': `token ${githubToken}`,\n      'Content-Type': 'application/json',\n      'User-Agent': 'autoheal-n8n-bridge',\n      'Accept': 'application/vnd.github.v3+json'\n    },\n    body: JSON.stringify({\n      message: commitMessage || '🤖 AutoHeal: dynamic code patch evolution',\n      content: base64Content,\n      sha: currentSha || undefined,\n      branch: repoBranch\n    })\n  });\n\n  const putData = await putRes.json();\n\n  if (putRes.status !== 200 && putRes.status !== 201) {\n    return [{ json: { success: false, status: putRes.status, details: putData } }];\n  }\n\n  // 3. Trigger Vercel Deploy Hook if provided\n  let deployTriggered = false;\n  if (vercelDeployHook) {\n    try {\n      await fetch(vercelDeployHook, { method: 'POST' });\n      deployTriggered = true;\n    } catch (e) {}\n  }\n\n  return [{\n    json: {\n      success: true,\n      commitSha: putData.content?.sha || putData.commit?.sha,\n      commitUrl: putData.commit?.html_url,\n      deployTriggered\n    }\n  }];\n} catch (err) {\n  return [{ json: { success: false, error: err.message } }];\n}"
+      },
+      "id": "dynamic-git-committer",
+      "name": "⚙️ Dynamic Git Committer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [360, 300]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json.success ? 200 : 400 }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "webhook-response",
+      "name": "✅ Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [620, 300]
+    }
+  ],
+  "connections": {
+    "🔗 AutoHeal Webhook": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Dynamic Git Committer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Dynamic Git Committer": {
+      "main": [
+        [
+          {
+            "node": "✅ Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    "autoheal",
+    "git-bridge",
+    "dynamic",
+    "multi-tenant"
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-21T08:40:00.000Z",
+  "versionId": "autoheal-dynamic-git-bridge-v1"
+}

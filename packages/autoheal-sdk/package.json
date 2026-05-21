@@ -1,0 +1,18 @@
+{
+  "name": "@autoheal/core",
+  "version": "1.0.0",
+  "description": "Auto-healing and AI-driven UI-improvement library for modern web applications.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "type": "module",
+  "keywords": [
+    "autoheal",
+    "self-healing",
+    "ai-agent",
+    "debugger",
+    "error-tracking",
+    "prompt-ui"
+  ],
+  "author": "",
+  "license": "MIT"
+}

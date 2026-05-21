@@ -1,0 +1,68 @@
+{
+  "sites": {
+    "localhost:5173": {
+      "errors": [
+        {
+          "id": "mock_crash_1",
+          "type": "crash",
+          "message": "TypeError: Cannot read properties of undefined (reading 'map') in SandboxView.tsx:67 on localhost:5173",
+          "stack": "TypeError: Cannot read properties of undefined (reading 'map')\n    at SandboxView (file:///c:/auomation/playground/src/components/SandboxView.tsx:67:32)\n    at renderWithHooks (file:///c:/auomation/node_modules/react-dom/cjs/react-dom.development.js:15486:18)",
+          "source": "file:///c:/auomation/playground/src/components/SandboxView.tsx",
+          "line": 67,
+          "column": 32,
+          "timestamp": "2026-05-21T03:31:55.570Z"
+        },
+        {
+          "id": "mock_promise_1",
+          "type": "promise",
+          "message": "Unhandled Promise Rejection: Error: Network Error - Failed to fetch endpoint 'https://api.broken-endpoint.dev/data/v1/telemetry' on localhost:5173",
+          "stack": "Error: Network Error\n    at fetchTelemetryData (file:///c:/auomation/playground/src/utils/api.ts:14:11)\n    at async loadDashboardData (file:///c:/auomation/playground/src/App.tsx:92:24)",
+          "source": "file:///c:/auomation/playground/src/utils/api.ts",
+          "line": 14,
+          "column": 11,
+          "timestamp": "2026-05-21T03:21:55.570Z"
+        },
+        {
+          "id": "mock_asset_1",
+          "type": "asset",
+          "message": "Failed to load resource: net::ERR_FILE_NOT_FOUND (broken-cyber-chip-image.jpg) on localhost:5173",
+          "source": "file:///c:/auomation/playground/src/assets/broken-cyber-chip-image.jpg",
+          "timestamp": "2026-05-21T03:04:55.570Z"
+        },
+        {
+          "id": "mock_console_1",
+          "type": "console_error",
+          "message": "[React] Mismatched Hydration Warning on localhost:5173: expected text node containing \"AutoHeal // Evolution Deck\" but found HTML tag <div>",
+          "source": "file:///c:/auomation/node_modules/react-dom/cjs/react-dom.development.js",
+          "timestamp": "2026-05-21T02:48:55.570Z"
+        }
+      ],
+      "customDb": {
+        "usersCount": 10,
+        "status": "online",
+        "usersList": [
+          "Yogesh",
+          "Admin",
+          "NewUser"
+        ]
+      },
+      "settings": {
+        "n8nWebhook": "",
+        "vercelDeployHook": "",
+        "gitBranch": "main",
+        "githubRepo": "",
+        "githubToken": "",
+        "githubBranch": "main",
+        "modelProvider": "groq",
+        "geminiKey": "",
+        "groqKey": "YOUR_GROQ_API_KEY"
+      },
+      "scores": {
+        "polish": 52,
+        "spacing": 60,
+        "mobile": 45,
+        "conversion": 55
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "autoheal-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "playground"
+  ],
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently \"node server.js\" \"npm run dev --workspace=playground\"",
+    "build:sdk": "npm run build --workspace=packages/autoheal-sdk",
+    "build:playground": "npm run build --workspace=playground",
+    "setup": "node packages/autoheal-cli/bin/setup.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
