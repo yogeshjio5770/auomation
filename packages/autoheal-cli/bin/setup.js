@@ -861,9 +861,17 @@ async function main() {
 
   // Backend URL is fixed — same master server for every user
   const masterUrl = 'https://autoheal-4p4q.onrender.com';
-  const siteId = await ask('Project Name (Site ID)', 'my-awesome-startup');
+  const siteId = await ask('Website URL (e.g. https://my-site.com)', 'my-awesome-startup');
 
-  const spinner = createSpinner('Writing config files…');
+  const spinner = createSpinner('Installing libraries & writing config…');
+
+  // Install the SDK automatically
+  try {
+    const { execSync } = require('child_process');
+    execSync('npm install @autoheal/core', { stdio: 'ignore' });
+  } catch (err) {
+    // Ignore errors, user might already have it or not be using npm
+  }
 
   // Write .autoheal.json (non-secret config)
   saveConfig({
@@ -987,7 +995,7 @@ async function main() {
   console.log();
 
   const rows = [
-    ['Site ID',      siteId],
+    ['Site URL',     siteId],
     ['GitHub',       result.githubRepo     ? `github.com/${result.githubRepo}` : '—'],
     ['Branch',       result.githubBranch   || 'main'],
     ['Vercel',       result.vercelProjectUrl || (result.vercelToken ? 'Token saved' : '—')],

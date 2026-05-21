@@ -10,22 +10,21 @@ const STEPS = [
     icon: '📋',
     num: '01',
     title: 'Register Your Site',
-    desc: 'Enter your project name below. We instantly register your site on the AutoHeal Master Server and generate a unique Site ID for you.',
+    desc: 'Enter your project name below. We instantly register your site on the AutoHeal Master Server and generate a unique Site URL for you.',
     color: '#6366f1',
   },
   {
-    icon: '🔧',
-    num: '02',
-    title: 'Run the CLI Setup',
-    desc: 'Run one command in your project terminal. The wizard connects your GitHub repo, Vercel deploy hook, and N8N automation in under 2 minutes.',
+    num: "02",
+    title: "Run CLI Wizard",
+    desc: "Connect your GitHub & Vercel in 60s",
+    code: "npx @autoheal/setup",
     color: '#a855f7',
-    code: 'npx @autoheal/setup',
   },
   {
-    icon: '📌',
-    num: '03',
-    title: 'Paste the Snippet',
-    desc: 'Copy the two-line script snippet and paste it into the <head> of your website. No build tools, no npm install required.',
+    num: "03",
+    title: "Enter Site URL",
+    desc: "Provide your URL and paste the snippet",
+    code: "<script src='...'></script>",
     color: '#06b6d4',
   },
   {
@@ -71,7 +70,6 @@ export default function App() {
   const [siteId, setSiteId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
   const fixes   = useCounter(12847);
@@ -82,12 +80,6 @@ export default function App() {
     const t = setInterval(() => setActiveStep(s => (s + 1) % STEPS.length), 3000);
     return () => clearInterval(t);
   }, []);
-
-  const snippet = `<script>
-  window.AUTOHEAL_SITE_ID = "${siteId || 'your-project-name'}";
-  window.AUTOHEAL_ENDPOINT = "${BACKEND_URL}";
-</script>
-<script src="${BACKEND_URL}/sdk/autoheal.js"></script>`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,12 +96,6 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(snippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -259,7 +245,7 @@ export default function App() {
         <div className="section-inner">
           <div className="section-eyebrow">Step 1 of 4</div>
           <h2 className="section-title">Register Your Site</h2>
-          <p className="section-sub">Enter a unique name for your project. This becomes your Site ID.</p>
+          <p className="section-sub">Enter your site URL to begin protection.</p>
 
           <div className="onboard-layout">
             {/* Left: Form */}
@@ -275,20 +261,16 @@ export default function App() {
                   </div>
                   <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                      <label htmlFor="site-id-input">Project Name (Site ID)</label>
-                      <input
-                        id="site-id-input"
-                        type="text"
-                        className="glass-input"
-                        placeholder="e.g. my-awesome-startup"
-                        value={siteId}
-                        onChange={e => setSiteId(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                        required
-                        pattern="[a-z0-9\-]+"
-                        title="Lowercase letters, numbers, and hyphens only"
-                      />
-                      <span className="input-hint">Lowercase letters, numbers, hyphens only</span>
-                    </div>
+                <label>Site URL</label>
+                <input 
+                  className="glass-input"
+                  placeholder="e.g. https://my-site.com"
+                  value={siteId}
+                  onChange={e => setSiteId(e.target.value)}
+                  disabled={isLoading}
+                />
+                <span className="input-hint">Used to uniquely identify your traffic and patches.</span>
+              </div>
                     <button type="submit" className="btn-primary" id="register-btn" disabled={isLoading}>
                       {isLoading ? (
                         <><span className="btn-spinner" /> Registering on Master Server...</>
@@ -301,40 +283,34 @@ export default function App() {
               ) : (
                 <div className="success-panel">
                   <div className="success-check">✓</div>
-                  <h3 className="card-title">"{siteId}" is Registered!</h3>
-                  <p className="success-sub">Copy this snippet and paste it into the <code>&lt;head&gt;</code> of your website:</p>
-
-                  <div className="code-block">
-                    <div className="code-header">
-                      <span className="code-lang">HTML</span>
-                      <button className="copy-btn" id="copy-snippet-btn" onClick={handleCopy}>
-                        {copied ? '✓ Copied!' : '📋 Copy'}
-                      </button>
-                    </div>
-                    <pre className="code-pre"><code>{snippet}</code></pre>
-                  </div>
-
+                  <h2 className="card-title">Registration Complete!</h2>
+                  <p className="card-subtitle">Your site <code>{siteId}</code> is now registered.</p>
+            
                   <div className="next-steps">
-                    <h4>Next Steps:</h4>
+                    <h4>Follow these steps:</h4>
+                    
                     <div className="next-step-item">
-                      <span className="ns-num">2</span>
+                      <div className="ns-num">1</div>
                       <div>
-                        <strong>Run the CLI</strong>
-                        <p>In your project folder, run: <code className="inline-code">npx @autoheal/setup</code></p>
+                        <strong>Run the Setup CLI</strong>
+                        <p>In your terminal, run <span className="inline-code">npx @autoheal/setup</span></p>
+                        <p>It will automatically install libraries and inject the snippet into your index.html!</p>
                       </div>
                     </div>
+
                     <div className="next-step-item">
-                      <span className="ns-num">3</span>
+                      <div className="ns-num">2</div>
                       <div>
-                        <strong>Paste &amp; Deploy</strong>
-                        <p>Paste the snippet above into your HTML <code className="inline-code">&lt;head&gt;</code>, push &amp; deploy.</p>
+                        <strong>Push to GitHub</strong>
+                        <p>Commit the changes and push to trigger a Vercel deploy.</p>
                       </div>
                     </div>
+
                     <div className="next-step-item">
-                      <span className="ns-num">4</span>
+                      <div className="ns-num">3</div>
                       <div>
-                        <strong>Watch It Self-Heal</strong>
-                        <p>Break something intentionally. Watch AutoHeal fix and redeploy it automatically! 🤖</p>
+                        <strong>Done!</strong>
+                        <p>AutoHeal is now monitoring and protecting your app.</p>
                       </div>
                     </div>
                   </div>
@@ -349,13 +325,12 @@ export default function App() {
             {/* Right: Mini how-to panel */}
             <div className="onboard-info">
               <div className="info-card">
-                <div className="info-icon">🖥️</div>
-                <h4>What happens when you register?</h4>
+                <div className="info-icon">💡</div>
+                <h4>What happens next?</h4>
                 <ul className="info-list">
-                  <li>✓ Your Site ID is created on the AutoHeal Master Server</li>
-                  <li>✓ A unique config slot is reserved for your credentials</li>
-                  <li>✓ You get a ready-to-paste script snippet</li>
-                  <li>✓ The AI healing engine is activated for your site</li>
+                  <li>1. Enter your Site URL above</li>
+                  <li>2. Get your tracking snippet</li>
+                  <li>3. Run our CLI tool</li>
                 </ul>
               </div>
               <div className="info-card">
