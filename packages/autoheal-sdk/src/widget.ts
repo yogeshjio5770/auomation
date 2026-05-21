@@ -164,6 +164,13 @@ export class AutoHealWidget {
               <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Groq API Key (Llama 3)</label>
               <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:40px; border-radius:4px; font-family: monospace;" placeholder="gsk_..." />
             </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display:flex; align-items:center; cursor:pointer; font-size:13px; color:#fff;">
+                <input type="checkbox" id="ah-autonomous-toggle" style="margin-right:8px; cursor:pointer; width:16px; height:16px;" />
+                ⚡ Enable Autonomous Auto-Heal (Zero-Click)
+              </label>
+              <p style="color:#888; font-size:11px; margin-top:4px; margin-left: 24px;">Automatically catches crashes, writes a patch, and deploys to GitHub instantly without asking.</p>
+            </div>
           </div>
         </div>
         
@@ -194,6 +201,11 @@ export class AutoHealWidget {
         settingsFooter.style.display = 'flex';
         
         // Fetch existing settings to populate the input
+        const autonomousToggle = document.getElementById('ah-autonomous-toggle') as HTMLInputElement;
+        if (autonomousToggle) {
+          autonomousToggle.checked = localStorage.getItem('autoheal_autonomous') === 'true';
+        }
+
         try {
           const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
           const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
@@ -216,7 +228,18 @@ export class AutoHealWidget {
     // Save Settings logic
     document.getElementById('ah-save-settings-btn')?.addEventListener('click', async () => {
       const groqKey = (document.getElementById('ah-groq-key-input') as HTMLInputElement).value.trim();
-      if (!groqKey) return;
+      
+      const autonomousToggle = document.getElementById('ah-autonomous-toggle') as HTMLInputElement;
+      if (autonomousToggle) {
+        localStorage.setItem('autoheal_autonomous', autonomousToggle.checked ? 'true' : 'false');
+      }
+
+      if (!groqKey) {
+        const statusEl = document.getElementById('ah-settings-status')!;
+        statusEl.textContent = 'Settings saved locally.';
+        setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        return;
+      }
 
       const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
       const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;

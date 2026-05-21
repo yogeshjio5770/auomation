@@ -92,16 +92,62 @@ export class AutoHealSDK {
       emailerInstance.sendErrorEmail(error);
 
       // Handle visual routing
-      if (error.type === 'crash') {
-        // Uncaught exceptions cause a hard screen lock/overlay
-        widgetInstance.triggerHardCrashOverlay(error);
+      const isAutonomous = localStorage.getItem('autoheal_autonomous') === 'true';
+      
+      if (isAutonomous && error.type !== 'feature') {
+        widgetInstance.showToast('⚡ Autonomous Mode: Analyzing crash in background...', 'info');
+        this.runAutonomousHealer(error, widgetInstance);
       } else {
-        // Soft errors (console.error, console.warn, broken assets) trigger pulsing corner badge
-        widgetInstance.reportSoftError(error);
+        if (error.type === 'crash') {
+          // Uncaught exceptions cause a hard screen lock/overlay
+          widgetInstance.triggerHardCrashOverlay(error);
+        } else {
+          // Soft errors (console.error, console.warn, broken assets) trigger pulsing corner badge
+          widgetInstance.reportSoftError(error);
+        }
       }
     });
 
     console.log('__autoheal_internal__ AutoHealUI SDK active and monitoring logs.');
+  }
+
+  private async runAutonomousHealer(error: ErrorData, widgetInstance: any) {
+    try {
+      const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+      const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+      
+      // Step 1: Generate Patch
+      const genRes = await fetch(`${endpoint}/api/generate-patch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+        body: JSON.stringify({ error, file: error.source || 'sandbox' })
+      });
+      const genData = await genRes.json();
+      if (!genData.success) throw new Error(genData.explanation);
+
+      widgetInstance.showToast('🔮 Autonomous Mode: Patch generated! Deploying to GitHub...', 'info');
+
+      // Step 2: Apply Patch
+      const applyRes = await fetch(`${endpoint}/api/apply-patch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+        body: JSON.stringify({ 
+          files: genData.files && genData.files.length > 0 ? genData.files : undefined, 
+          content: genData.healedFileContent, 
+          file: genData.targetPath || error.source || 'sandbox', 
+          prompt: error.message 
+        })
+      });
+      
+      const applyData = await applyRes.json();
+      if (applyData.success) {
+        widgetInstance.showToast('🚀 Autonomous Patch deployed successfully! Vercel is building...', 'success');
+      } else {
+        widgetInstance.showToast(`❌ Autonomous deploy failed: ${applyData.error}`, 'error');
+      }
+    } catch (e) {
+      widgetInstance.showToast(`❌ Autonomous patch failed: ${(e as Error).message}`, 'error');
+    }
   }
 
   public mountDashboard(selector: string | HTMLElement) {
