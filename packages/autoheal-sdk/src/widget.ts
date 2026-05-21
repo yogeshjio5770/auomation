@@ -433,14 +433,28 @@ export class AutoHealWidget {
           if (text) text.textContent = 'Applying Patch...';
           
           if (footerStatus) footerStatus.textContent = 'Injecting runtime hot-patch...';
-          await this.delay(1200);
+          
+          try {
+            const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+            const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+            const res = await fetch(`${endpoint}/api/apply-patch`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+              body: JSON.stringify({ diffCode, file: error.source, prompt: error.message })
+            });
+            const applyData = await res.json();
+            if (applyData.success) {
+               this.showToast('🚀 Code Pushed to GitHub! Vercel is building...', 'success');
+            } else {
+               this.showToast(`❌ Push Failed: ${applyData.error}`, 'error');
+            }
+          } catch (e) {
+             this.showToast('❌ Network error communicating with Master Server', 'error');
+          }
 
           // Clear error from queue
           this.currentErrors = this.currentErrors.filter(e => e.id !== error.id);
           this.updateBadgeCount();
-
-          // Show Toast notification
-          this.showToast('🚀 System Healed Successfully!', 'success');
           
           this.closeDiagnosticModal();
 
