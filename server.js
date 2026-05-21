@@ -355,15 +355,15 @@ function getSiteData(db, siteId) {
       errors: [],
       customDb: {},
       settings: {
-        n8nWebhook: '',
-        vercelDeployHook: '',
-        gitBranch: 'main',
-        githubRepo: '',
-        githubToken: '',
-        githubBranch: 'main',
-        modelProvider: 'groq',
-        geminiKey: '',
-        groqKey: 'YOUR_GROQ_API_KEY'
+        n8nWebhook: process.env.N8N_WEBHOOK || '',
+        vercelDeployHook: process.env.VERCEL_DEPLOY_HOOK || '',
+        gitBranch: process.env.GITHUB_BRANCH || 'main',
+        githubRepo: process.env.GITHUB_REPO || '',
+        githubToken: process.env.GITHUB_TOKEN || '',
+        githubBranch: process.env.GITHUB_BRANCH || 'main',
+        modelProvider: process.env.MODEL_PROVIDER || 'groq',
+        geminiKey: process.env.GEMINI_API_KEY || '',
+        groqKey: process.env.GROQ_API_KEY || ''
       },
       scores: {
         polish: 52,
