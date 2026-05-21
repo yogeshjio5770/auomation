@@ -122,10 +122,13 @@ export class AutoHealWidget {
             <span class="ah-pulse-dot" style="background:#00f0ff"></span>
             <span>AUTOHEAL AI STUDIO</span>
           </div>
-          <button class="ah-close-btn" id="ah-close-modal-btn">✕</button>
+          <div>
+            <button class="ah-settings-btn" id="ah-settings-btn" title="Settings">⚙️</button>
+            <button class="ah-close-btn" id="ah-close-modal-btn">✕</button>
+          </div>
         </div>
         
-        <div class="ah-diag-body">
+        <div class="ah-diag-body" id="ah-feature-view">
           <div class="ah-section">
             <div class="ah-section-title">✨ What would you like to build?</div>
             <textarea class="ah-feature-input" id="ah-feature-prompt" placeholder="e.g. Add a contact form to this page, or change the background to dark mode..."></textarea>
@@ -143,7 +146,7 @@ export class AutoHealWidget {
           </div>
         </div>
 
-        <div class="ah-diag-footer">
+        <div class="ah-diag-footer" id="ah-feature-footer">
           <div class="ah-status-message" id="ah-footer-status">Ready to build.</div>
           <div class="ah-actions">
             <button class="ah-btn primary" id="ah-build-btn">
@@ -152,10 +155,77 @@ export class AutoHealWidget {
             </button>
           </div>
         </div>
+
+        <div class="ah-diag-body" id="ah-settings-view" style="display:none;">
+          <div class="ah-section">
+            <div class="ah-section-title">⚙️ AI Provider Settings</div>
+            <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your own API key to power the AI Studio. Your key is securely stored in the AutoHeal Master Database.</p>
+            <div style="margin-bottom: 12px;">
+              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Groq API Key (Llama 3)</label>
+              <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:40px; border-radius:4px; font-family: monospace;" placeholder="gsk_..." />
+            </div>
+          </div>
+        </div>
+        
+        <div class="ah-diag-footer" id="ah-settings-footer" style="display:none;">
+          <div class="ah-status-message" id="ah-settings-status" style="color: #4ade80;"></div>
+          <div class="ah-actions">
+            <button class="ah-btn primary" id="ah-save-settings-btn">SAVE SETTINGS</button>
+          </div>
+        </div>
       </div>
     `;
 
     document.getElementById('ah-close-modal-btn')?.addEventListener('click', () => this.closeDiagnosticModal());
+    
+    // View switching logic
+    const featureView = document.getElementById('ah-feature-view')!;
+    const featureFooter = document.getElementById('ah-feature-footer')!;
+    const settingsView = document.getElementById('ah-settings-view')!;
+    const settingsFooter = document.getElementById('ah-settings-footer')!;
+    let isSettingsMode = false;
+
+    document.getElementById('ah-settings-btn')?.addEventListener('click', () => {
+      isSettingsMode = !isSettingsMode;
+      if (isSettingsMode) {
+        featureView.style.display = 'none';
+        featureFooter.style.display = 'none';
+        settingsView.style.display = 'block';
+        settingsFooter.style.display = 'flex';
+      } else {
+        featureView.style.display = 'block';
+        featureFooter.style.display = 'flex';
+        settingsView.style.display = 'none';
+        settingsFooter.style.display = 'none';
+      }
+    });
+
+    // Save Settings logic
+    document.getElementById('ah-save-settings-btn')?.addEventListener('click', async () => {
+      const groqKey = (document.getElementById('ah-groq-key-input') as HTMLInputElement).value.trim();
+      if (!groqKey) return;
+
+      const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+      const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+      const statusEl = document.getElementById('ah-settings-status')!;
+      
+      statusEl.textContent = 'Saving...';
+      try {
+        const res = await fetch(`${endpoint}/api/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+          body: JSON.stringify({ settings: { groqKey, modelProvider: 'groq' } })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusEl.textContent = 'Settings saved successfully! ✅';
+        } else {
+          statusEl.textContent = 'Error saving settings.';
+        }
+      } catch (e) {
+        statusEl.textContent = 'Failed to connect to Master Server.';
+      }
+    });
     
     const buildBtn = document.getElementById('ah-build-btn') as HTMLButtonElement;
     const promptInput = document.getElementById('ah-feature-prompt') as HTMLTextAreaElement;
@@ -569,26 +639,13 @@ export class AutoHealWidget {
         from { opacity: 0.5; }
         to { opacity: 1; }
       }
-      .ah-close-btn {
-        background: none;
-        border: none;
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 18px;
-        cursor: pointer;
-        transition: color 0.2s;
-      }
-      .ah-close-btn:hover {
-        color: #fff;
-      }
+      .ah-close-btn { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; transition: color 0.2s; padding: 0; line-height: 1; }
+      .ah-close-btn:hover { color: #fff; }
+      .ah-settings-btn { background: none; border: none; color: #888; font-size: 18px; cursor: pointer; transition: color 0.2s; padding: 0; line-height: 1; margin-right: 12px; }
+      .ah-settings-btn:hover { color: #fff; transform: rotate(45deg); }
 
       /* Body */
-      .ah-diag-body {
-        padding: 24px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
+      .ah-diag-body { padding: 20px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
       .ah-section {
         display: flex;
         flex-direction: column;

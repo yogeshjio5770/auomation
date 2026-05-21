@@ -829,7 +829,7 @@ async function main() {
   console.log(`${bold(cyan('  STEP 3.5 of 4'))} ${cyan('—')} Cloud Database`);
   console.log(hr());
   console.log();
-  const needDb = false;
+  const needDb = true;
   if (needDb) {
     const isCloud = result.n8nHosted?.includes('creativekulhad.onrender.com');
     const dbBaseUrl = isCloud ? 'https://creativekulhad.onrender.com' : 'http://localhost:3001';

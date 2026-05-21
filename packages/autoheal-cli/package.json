@@ -1,6 +1,6 @@
 {
   "name": "@autoheal/setup",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "AutoHeal interactive setup wizard — GitHub, Vercel & N8N in 60 seconds",
   "main": "bin/setup.js",
   "bin": {
