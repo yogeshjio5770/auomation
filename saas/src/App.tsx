@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 
 function App() {
   const [siteId, setSiteId] = useState('');
-  const [githubRepo, setGithubRepo] = useState('');
-  const [githubToken, setGithubToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -20,10 +18,7 @@ function App() {
           'x-site-id': siteId,
         },
         body: JSON.stringify({
-          settings: {
-            githubRepo,
-            githubToken
-          },
+          settings: {},
         }),
       });
 
@@ -48,7 +43,7 @@ function App() {
         <h1>Welcome to <span className="gradient-text">AutoHeal</span></h1>
         <p className="subtitle">
           The world's first AI-powered self-healing infrastructure. 
-          Connect your GitHub repository below to generate your custom integration snippet.
+          Generate your custom integration snippet below.
         </p>
 
         <div className="glass-card">
@@ -64,30 +59,6 @@ function App() {
                     placeholder="e.g. my-awesome-startup"
                     value={siteId}
                     onChange={(e) => setSiteId(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>GitHub Repository</label>
-                  <input 
-                    type="text" 
-                    className="glass-input" 
-                    placeholder="e.g. facebook/react"
-                    value={githubRepo}
-                    onChange={(e) => setGithubRepo(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>GitHub Access Token (PAT)</label>
-                  <input 
-                    type="password" 
-                    className="glass-input" 
-                    placeholder="ghp_..."
-                    value={githubToken}
-                    onChange={(e) => setGithubToken(e.target.value)}
                     required
                   />
                 </div>

@@ -332,15 +332,16 @@ async function testN8nWebhook(webhookUrl) {
 }
 
 // ─── WRITE AUTOHEAL CONFIG TO SERVER DB ───────────────────────────────────────
-async function syncConfigToServer(config) {
+async function syncConfigToServer(config, masterUrl, siteId) {
   try {
+    const url = new URL('/api/settings', masterUrl);
     const res = await apiCall({
-      hostname: 'localhost',
-      port: 3001,
-      path: '/api/settings',
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
       method: 'POST',
-      protocol: 'http:',
-      headers: { 'Content-Type': 'application/json', 'x-site-id': 'localhost:5173' },
+      protocol: url.protocol,
+      headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
     }, JSON.stringify({ settings: config }));
     return res.status === 200;
   } catch {
@@ -858,6 +859,9 @@ async function main() {
   console.log(hr());
   console.log();
 
+  const masterUrl = await ask('AutoHeal Master Server URL', 'https://autoheal.onrender.com');
+  const siteId = await ask('Project Name (Site ID)', 'my-awesome-startup');
+
   const spinner = createSpinner('Writing config files…');
 
   // Write .autoheal.json (non-secret config)
@@ -885,19 +889,21 @@ async function main() {
     db_url:            result.dbUrl,
   });
 
-  // Sync to local Express server DB (if running)
+  // Sync to remote Master Server DB
   const syncedToServer = await syncConfigToServer({
     githubRepo:       result.githubRepo,
     githubToken:      result.githubToken,
     githubBranch:     result.githubBranch,
     vercelDeployHook: result.vercelDeployHook,
     n8nWebhook:       result.n8nWebhook,
-  });
+  }, masterUrl, siteId);
 
   spinner.succeed(`Config saved to ${bold('.autoheal.json')} and ${bold('.env.local')}`);
 
   if (syncedToServer) {
-    console.log(`  ${green('✓')} Settings synced to AutoHeal dev server (localhost:3001)`);
+    console.log(`  ${green('✓')} Settings securely synced to Master Server (${cyan(masterUrl)})`);
+  } else {
+    console.log(`  ${yellow('⚠')} Could not sync settings to Master Server. You may need to enter them manually.`);
   }
 
   // Check if .gitignore already has .env.local
