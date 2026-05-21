@@ -50,8 +50,7 @@ function githubApiCall(token, urlPath, method = 'GET', body = null) {
 app.get('/api/file-context', async (req, res) => {
   const { file } = req.query;
   const siteId = req.headers['x-site-id'] || req.query.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
 
   // Map local keys to repo relative paths
   const relativeFileMap = {
@@ -120,8 +119,7 @@ app.get('/api/file-context', async (req, res) => {
 app.post('/api/apply-patch', async (req, res) => {
   const { file, content, targetText, replacementText, commitMessage: clientCommitMsg } = req.body;
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
 
   const relativeFileMap = {
     sandbox: 'playground/src/components/SandboxView.tsx',
@@ -318,40 +316,26 @@ app.post('/api/apply-patch', async (req, res) => {
 
 
 // ==========================================
-// MULTI-TENANT FILESYSTEM DATABASE (db.json)
+// MULTI-TENANT SUPABASE CLOUD DATABASE
 // ==========================================
-const DB_FILE = path.resolve(__dirname, 'db.json');
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_KEY || '';
+const supabase = createClient(supabaseUrl || 'https://example.supabase.co', supabaseKey || 'dummy_key');
 
-function loadDb() {
-  if (!fs.existsSync(DB_FILE)) {
-    const initialDb = { sites: {} };
-    fs.writeFileSync(DB_FILE, JSON.stringify(initialDb, null, 2), 'utf-8');
-    return initialDb;
-  }
-  try {
-    const content = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(content || '{"sites":{}}');
-  } catch (err) {
-    console.error('[AutoHeal DB] Error reading db.json, returning empty structure:', err);
-    return { sites: {} };
-  }
-}
-
-function saveDb(db) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('[AutoHeal DB] Error writing db.json:', err);
-  }
-}
-
-function getSiteData(db, siteId) {
+async function getSiteData(siteId) {
   const normalizedSiteId = siteId || 'localhost:5173';
-  if (!db.sites) {
-    db.sites = {};
-  }
-  if (!db.sites[normalizedSiteId]) {
-    db.sites[normalizedSiteId] = {
+  
+  const { data, error } = await supabase
+    .from('sites')
+    .select('data')
+    .eq('id', normalizedSiteId)
+    .single();
+
+  let site = data?.data;
+
+  if (!site) {
+    site = {
       errors: [],
       customDb: {},
       settings: {
@@ -360,20 +344,26 @@ function getSiteData(db, siteId) {
         gitBranch: process.env.GITHUB_BRANCH || 'main',
         githubRepo: process.env.GITHUB_REPO || '',
         githubToken: process.env.GITHUB_TOKEN || '',
-        githubBranch: process.env.GITHUB_BRANCH || 'main',
         modelProvider: process.env.MODEL_PROVIDER || 'groq',
         geminiKey: process.env.GEMINI_API_KEY || '',
         groqKey: process.env.GROQ_API_KEY || ''
       },
-      scores: {
-        polish: 52,
-        spacing: 60,
-        mobile: 45,
-        conversion: 55
-      }
+      scores: { polish: 52, spacing: 60, mobile: 45, conversion: 55 }
     };
+    await saveSiteData(normalizedSiteId, site);
   }
-  return db.sites[normalizedSiteId];
+  return site;
+}
+
+async function saveSiteData(siteId, siteData) {
+  const normalizedSiteId = siteId || 'localhost:5173';
+  const { error } = await supabase
+    .from('sites')
+    .upsert({ id: normalizedSiteId, data: siteData }, { onConflict: 'id' });
+    
+  if (error) {
+    console.error('[AutoHeal DB] Error saving to Supabase:', error);
+  }
 }
 
 function getSiteMockErrors(siteId) {
@@ -418,143 +408,132 @@ function getSiteMockErrors(siteId) {
 }
 
 // REST Endpoints: Telemetry Exception Logs
-app.get('/api/telemetry', (req, res) => {
+app.get('/api/telemetry', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.query.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   
   if (site.errors.length === 0) {
     site.errors = getSiteMockErrors(siteId);
-    saveDb(db);
+    await saveSiteData(siteId, site);
   }
   return res.json({ success: true, errors: site.errors });
 });
 
-app.post('/api/telemetry', (req, res) => {
+app.post('/api/telemetry', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const errorData = req.body.error;
   if (!errorData) {
     return res.status(400).json({ error: 'Error data payload is required.' });
   }
 
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   
   const exists = site.errors.some(e => e.message === errorData.message && e.type === errorData.type);
   if (!exists) {
     site.errors.push(errorData);
-    saveDb(db);
+    await saveSiteData(siteId, site);
   }
   return res.json({ success: true, errors: site.errors });
 });
 
-app.post('/api/telemetry/clear', (req, res) => {
+app.post('/api/telemetry/clear', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const { id } = req.body;
   if (!id) {
     return res.status(400).json({ error: 'Error ID is required for clearing.' });
   }
 
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   site.errors = site.errors.filter(e => e.id !== id);
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, errors: site.errors });
 });
 
-app.post('/api/telemetry/reseed', (req, res) => {
+app.post('/api/telemetry/reseed', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   site.errors = getSiteMockErrors(siteId);
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, errors: site.errors });
 });
 
 // REST Endpoints: Settings parameters
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.query.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   return res.json({ success: true, settings: site.settings });
 });
 
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const newSettings = req.body.settings;
   if (!newSettings) {
     return res.status(400).json({ error: 'Settings payload is required.' });
   }
 
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   site.settings = { ...site.settings, ...newSettings };
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, settings: site.settings });
 });
 
 // REST Endpoints: Visual Scoring parameters
-app.get('/api/scores', (req, res) => {
+app.get('/api/scores', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.query.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   return res.json({ success: true, scores: site.scores });
 });
 
-app.post('/api/scores', (req, res) => {
+app.post('/api/scores', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const newScores = req.body.scores;
   if (!newScores) {
     return res.status(400).json({ error: 'Scores payload is required.' });
   }
 
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   site.scores = { ...site.scores, ...newScores };
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, scores: site.scores });
 });
 
 // ──────────────────────────────────────────────────────────────────────────
 // MULTI-TENANT CUSTOM DATABASE ENDPOINTS
 // ──────────────────────────────────────────────────────────────────────────
-app.get('/api/db', (req, res) => {
+app.get('/api/db', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.query.siteId || 'localhost:5173';
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   if (!site.customDb) {
     site.customDb = {};
-    saveDb(db);
+    await saveSiteData(siteId, site);
   }
   return res.json({ success: true, data: site.customDb });
 });
 
-app.post('/api/db', (req, res) => {
+app.post('/api/db', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const dataPayload = req.body.data;
   if (dataPayload === undefined) {
     return res.status(400).json({ error: 'Data payload is required in body.data' });
   }
 
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   if (!site.customDb) {
     site.customDb = {};
   }
   site.customDb = { ...site.customDb, ...dataPayload };
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, data: site.customDb });
 });
 
-app.post('/api/db/append', (req, res) => {
+app.post('/api/db/append', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const { key, value } = req.body;
   if (!key || value === undefined) {
     return res.status(400).json({ error: 'Key and value parameters are required.' });
   }
 
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   if (!site.customDb) {
     site.customDb = {};
   }
@@ -562,16 +541,15 @@ app.post('/api/db/append', (req, res) => {
     site.customDb[key] = [];
   }
   site.customDb[key].push(value);
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, data: site.customDb[key] });
 });
 
-app.post('/api/db/clear', (req, res) => {
+app.post('/api/db/clear', async (req, res) => {
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const { key } = req.body;
   
-  const db = loadDb();
-  const site = getSiteData(db, siteId);
+  const site = await getSiteData(siteId);
   if (!site.customDb) {
     site.customDb = {};
   }
@@ -580,7 +558,7 @@ app.post('/api/db/clear', (req, res) => {
   } else {
     site.customDb = {};
   }
-  saveDb(db);
+  await saveSiteData(siteId, site);
   return res.json({ success: true, message: key ? `Key "${key}" cleared` : 'Database cleared', data: site.customDb });
 });
 
