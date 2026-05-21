@@ -390,14 +390,18 @@ export class AutoHealWidget {
     // Call AI or trigger simulator
     let success = false;
     let diffCode = '';
-
     let explanation = '';
+    let healedFileContent = '';
+    let targetPath = error.source || 'sandbox';
+
     if (this.onHealHandler) {
       try {
         const result = await this.onHealHandler(error);
         success = result.success;
         diffCode = result.diffCode;
         explanation = (result as any).explanation || '';
+        healedFileContent = (result as any).healedFileContent || '';
+        if ((result as any).targetPath) targetPath = (result as any).targetPath;
       } catch (err) {
         logLine('Failed to contact AI Healer Agent.', 'error');
       }
@@ -440,7 +444,7 @@ export class AutoHealWidget {
             const res = await fetch(`${endpoint}/api/apply-patch`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
-              body: JSON.stringify({ diffCode, file: error.source, prompt: error.message })
+              body: JSON.stringify({ content: healedFileContent, file: targetPath, prompt: error.message })
             });
             const applyData = await res.json();
             if (applyData.success) {

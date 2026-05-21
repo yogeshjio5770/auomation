@@ -52,14 +52,8 @@ export class AutoHealSDK {
         const genData = await genRes.json();
         if (!genData.success) throw new Error(genData.explanation);
 
-        // Step 2: Apply Patch automatically since Master Server generated it
-        await fetch(`${endpoint}/api/apply-patch`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
-          body: JSON.stringify({ file: genData.targetPath || 'sandbox', content: genData.healedFileContent })
-        });
-        
-        return { success: true, diffCode: genData.diffCode };
+        // Step 2: Return generated patch to UI for user confirmation before pushing
+        return { success: true, diffCode: genData.diffCode, healedFileContent: genData.healedFileContent, targetPath: genData.targetPath || 'sandbox' };
       } catch (e) {
         console.error('__autoheal_internal__ Standalone generation error:', e);
         return { success: false, diffCode: '', explanation: (e as Error).message };
