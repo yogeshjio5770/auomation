@@ -625,7 +625,9 @@ async function main() {
       console.log();
       console.log(`  ${dim('Running')} ${cyan('vercel login')} ${dim('— follow prompts in your browser…')}`);
       try {
+        if (rl) rl.close();
         execSync('vercel login', { stdio: 'inherit' });
+        createRL();
         cliLoginCompleted = true;
         // Try to get token from ~/.vercel
         const tokenPath = path.join(process.env.HOME || process.env.USERPROFILE || '', '.vercel', 'auth');
