@@ -444,14 +444,13 @@ async function main() {
     }
   }
 
-  // Choose / create repo
+  // Choose / create repo automatically if not set
   console.log();
-  const createNew = await askYN(`Create a new GitHub repo for this project?`, !result.githubRepo);
+  const createNew = !result.githubRepo;
 
   if (createNew) {
-    const defaultName = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'autoheal-site';
-    const repoName = await ask('Repository name', defaultName);
-    const isPrivate = await askYN('Make it private?', false);
+    const repoName = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'autoheal-site';
+    const isPrivate = false;
 
     const spinner = createSpinner(`Creating repo ${bold(result.githubUsername + '/' + repoName)}…`);
     try {
@@ -487,7 +486,7 @@ async function main() {
   // ── Push code to GitHub ─────────────────────────────────────────────────
   if (result.githubRepo && result.githubToken) {
     console.log();
-    const pushNow = await askYN('Push your project code to GitHub now?', true);
+    const pushNow = true;
     if (pushNow) {
       const remoteUrl = `https://${result.githubToken}@github.com/${result.githubRepo}.git`;
       const branch = result.githubBranch || 'main';
@@ -656,10 +655,10 @@ async function main() {
         const username = user?.user?.username || user?.username;
         spinner.succeed(`Connected to Vercel as ${bold('@' + username)}`);
 
-        // Create or link project
+        // Create or link project automatically
         if (!result.vercelProjectId && result.githubRepo) {
           console.log();
-          const createProj = await askYN('Create a new Vercel project linked to your GitHub repo?', true);
+          const createProj = true;
           if (createProj) {
             const projName = result.githubRepo.split('/')[1] || 'autoheal-site';
             const pSpinner = createSpinner(`Creating Vercel project ${bold(projName)}…`);
@@ -702,10 +701,9 @@ async function main() {
           }
         }
 
-        // Vercel CLI deploy fallback (if CLI is available and no API project was created)
         if (!result.vercelProjectId && useVercelCLI) {
           console.log();
-          const deployViaCLI = await askYN('Deploy to Vercel using the CLI now?', true);
+          const deployViaCLI = true;
           if (deployViaCLI) {
             console.log();
             console.log(`  ${dim('Running')} ${cyan('vercel --prod')} ${dim('— deploying your project…')}`);
@@ -725,10 +723,7 @@ async function main() {
         }
 
         if (!result.vercelDeployHook) {
-          console.log();
-          console.log(`  ${dim('Paste your Vercel deploy hook URL (optional — needed for auto-deploy):')}`);
-          console.log(`  ${dim('Vercel dashboard → Project → Settings → Git → Deploy Hooks → Create')}`);
-          result.vercelDeployHook = await ask('Vercel Deploy Hook URL (leave blank to skip)', '');
+          console.log(`  ${yellow('⚠')} Could not auto-generate Vercel deploy hook. Auto-deploys via N8N may require manual setup.`);
         }
       } else {
         spinner.fail('Invalid Vercel token');
@@ -738,7 +733,7 @@ async function main() {
     }
   } else if (useVercelCLI) {
     console.log();
-    const deployViaCLI = await askYN('Deploy to Vercel using the CLI now?', true);
+    const deployViaCLI = true;
     if (deployViaCLI) {
       console.log();
       console.log(`  ${dim('Running')} ${cyan('vercel --prod')} ${dim('— deploying your project…')}`);
@@ -769,7 +764,7 @@ async function main() {
   console.log(`  ${dim('and triggers your Vercel/Render deploy automatically.')}`);
   console.log();
 
-  const useSharedBridge = await askYN('Use the shared AutoHeal Cloud Automation Bridge? (Zero setup required)', true);
+  const useSharedBridge = true;
 
   if (useSharedBridge) {
     result.n8nHosted = 'https://creativekulhad.onrender.com';
@@ -834,7 +829,7 @@ async function main() {
   console.log(`${bold(cyan('  STEP 3.5 of 4'))} ${cyan('—')} Cloud Database`);
   console.log(hr());
   console.log();
-  const needDb = await askYN('Does your project need a database? (For login, users, forms, etc.)', true);
+  const needDb = false;
   if (needDb) {
     const isCloud = result.n8nHosted?.includes('creativekulhad.onrender.com');
     const dbBaseUrl = isCloud ? 'https://creativekulhad.onrender.com' : 'http://localhost:3001';
