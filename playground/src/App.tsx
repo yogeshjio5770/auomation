@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Cpu, Shield } from 'lucide-react';
 import { ControlPanel } from './components/ControlPanel';
 import { MainDashboard } from './components/MainDashboard';
-import { AutoHeal } from '../../packages/autoheal-sdk/src/index.ts';
 import { healerAgent } from './utils/agent.ts';
+
+// AutoHeal SDK is injected via <script src=".../sdk/autoheal.js"> in index.html
+// Access it through the global window.AutoHeal object
+declare const window: Window & { AutoHeal?: any };
 
 export const App: React.FC = () => {
   const [configVersion, setConfigVersion] = useState(0);
@@ -21,14 +24,14 @@ export const App: React.FC = () => {
     const web3FormsKey = localStorage.getItem('ah_web3forms_key') || '';
     const devEmail = localStorage.getItem('ah_dev_email') || '';
 
-    AutoHeal.init({
+    window.AutoHeal?.init({
       email: {
         accessKey: web3FormsKey || undefined,
         devEmail: devEmail || undefined,
         enabled: !!(web3FormsKey && devEmail),
       },
       autoHealEnabled: true,
-      onHealRequest: async (error) => {
+      onHealRequest: async (error: any) => {
         const currentGeminiKey = localStorage.getItem('ah_gemini_key') || undefined;
         const result = await healerAgent.healError(error, currentGeminiKey);
         if (result.success && result.patchCode) {
@@ -45,11 +48,11 @@ export const App: React.FC = () => {
       }
     });
 
-    return () => { AutoHeal.shutdown(); };
+    return () => { window.AutoHeal?.shutdown(); };
   }, [configVersion]);
 
   const handleConfigChange = () => {
-    AutoHeal.shutdown();
+    window.AutoHeal?.shutdown();
     setConfigVersion(prev => prev + 1);
   };
 

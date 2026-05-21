@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Inbox, Calendar, User, FileText, ChevronRight, X } from 'lucide-react';
-import { emailerInstance } from '../../../packages/autoheal-sdk/src/emailer.ts';
+// emailerInstance is from the local SDK — on Vercel we listen to the custom DOM event instead
 
 interface EmailPayload {
   subject: string;
@@ -16,17 +16,19 @@ export const MockMailbox: React.FC = () => {
   const [newMailPulse, setNewMailPulse] = useState(false);
 
   useEffect(() => {
-    // Subscribe to SDK Emailer events!
-    const unsubscribe = emailerInstance.subscribe((payload: EmailPayload) => {
-      setEmails(prev => [payload, ...prev]);
-      setNewMailPulse(true);
-      setTimeout(() => setNewMailPulse(false), 2000);
-    });
-
-    return () => {
-      unsubscribe();
+    // Listen for email events dispatched by the AutoHeal SDK bundle
+    const handler = (e: Event) => {
+      const payload = (e as CustomEvent).detail as EmailPayload;
+      if (payload) {
+        setEmails(prev => [payload, ...prev]);
+        setNewMailPulse(true);
+        setTimeout(() => setNewMailPulse(false), 2000);
+      }
     };
+    window.addEventListener('__autoheal_email__', handler);
+    return () => window.removeEventListener('__autoheal_email__', handler);
   }, []);
+
 
   const handleClear = () => {
     setEmails([]);

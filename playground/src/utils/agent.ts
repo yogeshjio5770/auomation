@@ -1,6 +1,19 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { ErrorData } from '../../../packages/autoheal-sdk/src/interceptor.ts';
 import { gitBridge } from './gitBridge.ts';
+
+// ErrorData type — mirrors packages/autoheal-sdk/src/interceptor.ts
+export interface ErrorData {
+  id: string;
+  type: 'crash' | 'promise' | 'console_error' | 'console_warn' | 'asset';
+  message: string;
+  stack?: string;
+  source?: string;
+  line?: number;
+  column?: number;
+  timestamp: string;
+  domContext?: string;
+}
+
 
 const getBackendUrl = () => {
   return localStorage.getItem('ah_backend_url') || 'http://localhost:3001';
