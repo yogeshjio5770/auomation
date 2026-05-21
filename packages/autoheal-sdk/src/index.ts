@@ -53,7 +53,7 @@ export class AutoHealSDK {
         if (!genData.success) throw new Error(genData.explanation);
 
         // Step 2: Return generated patch to UI for user confirmation before pushing
-        return { success: true, diffCode: genData.diffCode, healedFileContent: genData.healedFileContent, targetPath: genData.targetPath || 'sandbox' };
+        return { success: true, diffCode: genData.diffCode, files: genData.files || [], healedFileContent: genData.healedFileContent, targetPath: genData.targetPath || 'sandbox' };
       } catch (e) {
         console.error('__autoheal_internal__ Standalone generation error:', e);
         return { success: false, diffCode: '', explanation: (e as Error).message };

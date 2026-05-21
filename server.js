@@ -212,9 +212,13 @@ Your response must be a valid JSON object only, with no markdown styling blocks 
 {
   "success": true,
   "explanation": "Detailed explanation of what changed.",
-  "targetPath": "${file || 'unknown'}",
-  "diffCode": "A unified Git-style code diff showing the before (minus lines) and after (plus lines) code fixes.",
-  "healedFileContent": "The COMPLETE updated file content with the bug physically resolved or feature added."
+  "diffCode": "A unified Git-style code diff (or a general summary of changes).",
+  "files": [
+    {
+      "path": "src/App.jsx",
+      "content": "The COMPLETE updated file content for this specific file."
+    }
+  ]
 }
 Ensure your output is strictly valid JSON. Double-check that all strings are escaped correctly.
 `.trim();
@@ -264,8 +268,7 @@ Ensure your output is strictly valid JSON. Double-check that all strings are esc
       success: json.success ?? true,
       explanation: json.explanation || 'Self-healed via AI.',
       diffCode: json.diffCode || '',
-      patchCode: json.patchCode || '',
-      healedFileContent: json.healedFileContent || ''
+      files: json.files || []
     });
   } catch (e) {
     console.error('[AutoHeal Server] AI Generation Error:', e);
@@ -275,7 +278,7 @@ Ensure your output is strictly valid JSON. Double-check that all strings are esc
 
 // POST /api/apply-patch
 app.post('/api/apply-patch', async (req, res) => {
-  const { file, content, targetText, replacementText, commitMessage: clientCommitMsg } = req.body;
+  const { file, content, targetText, replacementText, commitMessage: clientCommitMsg, files } = req.body;
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const site = await getSiteData(siteId);
 
@@ -290,7 +293,7 @@ app.post('/api/apply-patch', async (req, res) => {
   // MODE 1: N8N CLOUD BRIDGE — forward to N8N webhook (creativekulhad.onrender.com)
   // The server injects the user's credentials server-side so the browser never sees them.
   // ──────────────────────────────────────────────────────────────────────────
-  if (site.settings && site.settings.n8nWebhook && site.settings.githubRepo && site.settings.githubToken) {
+  if (!files && site.settings && site.settings.n8nWebhook && site.settings.githubRepo && site.settings.githubToken) {
     try {
       const patchContent = content || '';
       const webhookPayload = {
@@ -362,71 +365,60 @@ app.post('/api/apply-patch', async (req, res) => {
       const repo = site.settings.githubRepo;
       const token = site.settings.githubToken;
       const branch = site.settings.githubBranch || 'main';
-      const apiPath = `/repos/${repo}/contents/${repoRelativePath}`;
 
-      // 1. Fetch file content to get the SHA
-      const getRes = await githubApiCall(token, `${apiPath}?ref=${branch}`, 'GET');
-      let currentSha = null;
-      let originalContent = '';
+      const filesToProcess = files ? files : [{ path: repoRelativePath, content: content }];
+      let lastSha = null;
 
-      if (getRes.status === 200 && getRes.body) {
-        currentSha = getRes.body.sha;
-        originalContent = Buffer.from(getRes.body.content, 'base64').toString('utf-8');
-      }
+      for (const f of filesToProcess) {
+        const p = relativeFileMap[f.path] || f.path;
+        const apiPath = `/repos/${repo}/contents/${p}`;
 
-      // 2. Resolve content
-      let updatedContent = '';
-      if (content) {
-        updatedContent = content;
-      } else if (targetText && replacementText) {
-        if (!originalContent.includes(targetText)) {
-          return res.status(400).json({ error: 'Target text not found in GitHub source file for patching.' });
+        // 1. Fetch file content to get the SHA
+        const getRes = await githubApiCall(token, `${apiPath}?ref=${branch}`, 'GET');
+        let currentSha = null;
+        if (getRes.status === 200 && getRes.body) currentSha = getRes.body.sha;
+
+        // 2. Commit file to GitHub
+        console.log(`[AutoHeal Server] Committing file patch directly to GitHub: ${repo}/${p}`);
+        const commitMessage = clientCommitMsg || `🤖 AutoHeal: auto-patch file ${p}`;
+        const putBody = {
+          message: commitMessage,
+          content: Buffer.from(f.content).toString('base64'),
+          branch: branch
+        };
+        if (currentSha) putBody.sha = currentSha;
+
+        const putRes = await githubApiCall(token, apiPath, 'PUT', putBody);
+        if (putRes.status !== 200 && putRes.status !== 201) {
+          throw new Error(`GitHub commit failed for ${p}: ${JSON.stringify(putRes.body)}`);
         }
-        updatedContent = originalContent.replace(targetText, replacementText);
-      } else {
-        return res.status(400).json({ error: 'Please supply either full new "content" or surgical "targetText"/"replacementText" parameters.' });
+        lastSha = putRes.body?.content?.sha;
       }
 
-      // 3. Commit file to GitHub
-      console.log(`[AutoHeal Server] Committing file patch directly to GitHub: ${repo}/${repoRelativePath}`);
-      const commitMessage = clientCommitMsg || `🤖 AutoHeal: auto-patch file ${repoRelativePath}`;
-      const putBody = {
-        message: commitMessage,
-        content: Buffer.from(updatedContent).toString('base64'),
-        branch: branch
-      };
-      if (currentSha) putBody.sha = currentSha;
-
-      const putRes = await githubApiCall(token, apiPath, 'PUT', putBody);
-
-      if (putRes.status === 200 || putRes.status === 201) {
-        // Trigger Vercel Deploy Hook if configured
-        if (site.settings.vercelDeployHook) {
-          try {
-            const hookUrl = new URL(site.settings.vercelDeployHook);
-            const hookOpts = {
-              hostname: hookUrl.hostname,
-              path: hookUrl.pathname + hookUrl.search,
-              method: 'POST',
-            };
-            const hookReq = https.request(hookOpts, () => {});
-            hookReq.on('error', () => {});
-            hookReq.end();
-            console.log('[AutoHeal Server] Vercel Deploy Hook triggered successfully.');
-          } catch (deployErr) {
-            console.error('[AutoHeal Server] Vercel deploy hook error:', deployErr.message);
-          }
+      // Trigger Vercel Deploy Hook if configured
+      if (site.settings.vercelDeployHook) {
+        try {
+          const hookUrl = new URL(site.settings.vercelDeployHook);
+          const hookOpts = {
+            hostname: hookUrl.hostname,
+            path: hookUrl.pathname + hookUrl.search,
+            method: 'POST',
+          };
+          const hookReq = https.request(hookOpts, () => {});
+          hookReq.on('error', () => {});
+          hookReq.end();
+          console.log('[AutoHeal Server] Vercel Deploy Hook triggered successfully.');
+        } catch (deployErr) {
+          console.error('[AutoHeal Server] Vercel deploy hook error:', deployErr.message);
         }
-
-        return res.json({
-          success: true,
-          mode: 'github',
-          message: `Patch successfully committed directly to GitHub repo: ${repo}/${repoRelativePath}`,
-          sha: putRes.body?.content?.sha
-        });
-      } else {
-        return res.status(putRes.status).json({ error: 'GitHub commit failed', details: putRes.body });
       }
+
+      return res.json({
+        success: true,
+        mode: 'github',
+        message: `Successfully committed ${filesToProcess.length} file(s) directly to GitHub repo: ${repo}`,
+        sha: lastSha
+      });
     } catch (err) {
       return res.status(500).json({ error: `GitHub API write failed: ${err.message}` });
     }

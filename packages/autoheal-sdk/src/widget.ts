@@ -393,6 +393,7 @@ export class AutoHealWidget {
     let explanation = '';
     let healedFileContent = '';
     let targetPath = error.source || 'sandbox';
+    let files: any[] = [];
 
     if (this.onHealHandler) {
       try {
@@ -402,6 +403,7 @@ export class AutoHealWidget {
         explanation = (result as any).explanation || '';
         healedFileContent = (result as any).healedFileContent || '';
         if ((result as any).targetPath) targetPath = (result as any).targetPath;
+        if ((result as any).files) files = (result as any).files;
       } catch (err) {
         logLine('Failed to contact AI Healer Agent.', 'error');
       }
@@ -444,7 +446,7 @@ export class AutoHealWidget {
             const res = await fetch(`${endpoint}/api/apply-patch`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
-              body: JSON.stringify({ content: healedFileContent, file: targetPath, prompt: error.message })
+              body: JSON.stringify({ files: files.length > 0 ? files : undefined, content: healedFileContent, file: targetPath, prompt: error.message })
             });
             const applyData = await res.json();
             if (applyData.success) {
