@@ -185,13 +185,26 @@ export class AutoHealWidget {
     const settingsFooter = document.getElementById('ah-settings-footer')!;
     let isSettingsMode = false;
 
-    document.getElementById('ah-settings-btn')?.addEventListener('click', () => {
+    document.getElementById('ah-settings-btn')?.addEventListener('click', async () => {
       isSettingsMode = !isSettingsMode;
       if (isSettingsMode) {
         featureView.style.display = 'none';
         featureFooter.style.display = 'none';
         settingsView.style.display = 'block';
         settingsFooter.style.display = 'flex';
+        
+        // Fetch existing settings to populate the input
+        try {
+          const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+          const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+          const res = await fetch(`${endpoint}/api/settings`, { headers: { 'x-site-id': siteId } });
+          const data = await res.json();
+          if (data.groqKey) {
+            (document.getElementById('ah-groq-key-input') as HTMLInputElement).value = data.groqKey;
+          }
+        } catch (e) {
+          console.warn('AutoHeal: Could not fetch settings', e);
+        }
       } else {
         featureView.style.display = 'block';
         featureFooter.style.display = 'flex';
