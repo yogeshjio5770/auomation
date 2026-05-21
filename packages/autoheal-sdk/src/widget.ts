@@ -371,20 +371,22 @@ export class AutoHealWidget {
     logLine('Extracting code context around error location...', 'info');
     
     await this.delay(1000);
-    logLine('Consulting Gemini LLM error-healing patterns...', 'comment');
+    logLine('Consulting AI LLM healing patterns...', 'comment');
     if (footerStatus) footerStatus.textContent = 'Generating surgical repair code...';
 
     // Call AI or trigger simulator
     let success = false;
     let diffCode = '';
 
+    let explanation = '';
     if (this.onHealHandler) {
       try {
         const result = await this.onHealHandler(error);
         success = result.success;
         diffCode = result.diffCode;
+        explanation = (result as any).explanation || '';
       } catch (err) {
-        logLine('Failed to contact Gemini Healer Agent. Checking offline templates.', 'error');
+        logLine('Failed to contact AI Healer Agent.', 'error');
       }
     }
 
@@ -434,12 +436,16 @@ export class AutoHealWidget {
         };
       }
     } else {
-      logLine('AI agent could not determine a safe patch for this exception.', 'error');
+      logLine(`AI agent failed: ${explanation || 'Could not determine a safe patch.'}`, 'error');
       if (footerStatus) footerStatus.textContent = 'Healing failed. Manual debug required.';
-      const loader = document.getElementById('ah-btn-loader');
-      if (loader) loader.style.display = 'none';
-      const text = document.getElementById('ah-btn-text');
-      if (text) text.textContent = 'Unable to heal';
+      if (patchBtn) {
+        patchBtn.disabled = false;
+        patchBtn.classList.remove('disabled');
+        const loader = document.getElementById('ah-btn-loader');
+        if (loader) loader.style.display = 'none';
+        const text = document.getElementById('ah-btn-text');
+        if (text) text.textContent = 'Unable to heal';
+      }
     }
   }
 
