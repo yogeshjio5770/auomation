@@ -36,7 +36,34 @@ export class AutoHealSDK {
       if (this.config.onHealRequest) {
         return await this.config.onHealRequest(error);
       }
-      return { success: false, diffCode: '' };
+      
+      // Default Standalone SDK Behavior (Fallback to Master Server AI)
+      const isFeature = error.type === 'feature';
+      const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+      const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+      
+      try {
+        // Step 1: Generate Patch
+        const genRes = await fetch(`${endpoint}/api/generate-patch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+          body: JSON.stringify(isFeature ? { prompt: error.message, file: error.source || 'sandbox' } : { error, file: error.source || 'sandbox' })
+        });
+        const genData = await genRes.json();
+        if (!genData.success) throw new Error(genData.explanation);
+
+        // Step 2: Apply Patch automatically since Master Server generated it
+        await fetch(`${endpoint}/api/apply-patch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+          body: JSON.stringify({ file: genData.targetPath || 'sandbox', content: genData.healedFileContent })
+        });
+        
+        return { success: true, diffCode: genData.diffCode };
+      } catch (e) {
+        console.error('__autoheal_internal__ Standalone generation error:', e);
+        return { success: false, diffCode: '', explanation: (e as Error).message };
+      }
     });
 
     // 3. Start intercepting errors

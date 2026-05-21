@@ -1,6 +1,6 @@
 export interface ErrorData {
   id: string;
-  type: 'crash' | 'promise' | 'console_error' | 'console_warn' | 'asset';
+  type: 'crash' | 'promise' | 'console_error' | 'console_warn' | 'asset' | 'feature';
   message: string;
   stack?: string;
   source?: string;

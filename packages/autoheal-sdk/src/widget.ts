@@ -12,6 +12,7 @@ export class AutoHealWidget {
     this.onHealHandler = onHeal;
     this.injectStyles();
     this.createBadge();
+    this.createFab();
     this.createWidgetContainer();
   }
 
@@ -90,6 +91,101 @@ export class AutoHealWidget {
     this.container.id = 'autoheal-container';
     this.container.className = 'ah-modal-overlay';
     document.body.appendChild(this.container);
+  }
+
+  private createFab() {
+    if (document.getElementById('autoheal-fab')) return;
+
+    const fab = document.createElement('div');
+    fab.id = 'autoheal-fab';
+    fab.className = 'ah-fab';
+    fab.innerHTML = '✨';
+    fab.title = 'Ask AI to build a feature';
+    
+    fab.addEventListener('click', () => {
+      this.openFeatureModal();
+    });
+
+    document.body.appendChild(fab);
+  }
+
+  private openFeatureModal() {
+    if (!this.container) return;
+
+    this.container.classList.remove('ah-hard-crash');
+    this.container.style.display = 'flex';
+
+    this.container.innerHTML = `
+      <div class="ah-diag-modal">
+        <div class="ah-diag-header">
+          <div class="ah-diag-title">
+            <span class="ah-pulse-dot" style="background:#00f0ff"></span>
+            <span>AUTOHEAL AI STUDIO</span>
+          </div>
+          <button class="ah-close-btn" id="ah-close-modal-btn">✕</button>
+        </div>
+        
+        <div class="ah-diag-body">
+          <div class="ah-section">
+            <div class="ah-section-title">✨ What would you like to build?</div>
+            <textarea class="ah-feature-input" id="ah-feature-prompt" placeholder="e.g. Add a contact form to this page, or change the background to dark mode..."></textarea>
+          </div>
+
+          <div class="ah-section ah-diag-flow">
+            <div class="ah-console" id="ah-diag-console" style="display:none; height:150px"></div>
+          </div>
+
+          <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
+            <div class="ah-section-title">🔮 Proposed UI Upgrade</div>
+            <div class="ah-diff-viewer" id="ah-diff-box">
+              <!-- Content filled dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <div class="ah-diag-footer">
+          <div class="ah-status-message" id="ah-footer-status">Ready to build.</div>
+          <div class="ah-actions">
+            <button class="ah-btn primary" id="ah-build-btn">
+              <span class="ah-btn-spinner" id="ah-btn-loader" style="display: none;"></span>
+              <span id="ah-btn-text">BUILD FEATURE 🚀</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('ah-close-modal-btn')?.addEventListener('click', () => this.closeDiagnosticModal());
+    
+    const buildBtn = document.getElementById('ah-build-btn') as HTMLButtonElement;
+    const promptInput = document.getElementById('ah-feature-prompt') as HTMLTextAreaElement;
+
+    buildBtn.addEventListener('click', () => {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      
+      promptInput.disabled = true;
+      buildBtn.disabled = true;
+      buildBtn.classList.add('disabled');
+      const loader = document.getElementById('ah-btn-loader');
+      if (loader) loader.style.display = 'inline-block';
+      const text = document.getElementById('ah-btn-text');
+      if (text) text.textContent = 'BUILDING...';
+      
+      const consoleEl = document.getElementById('ah-diag-console');
+      if (consoleEl) consoleEl.style.display = 'block';
+
+      // Create a mock ErrorData for the feature request
+      const featureRequest: ErrorData = {
+        id: 'feature_' + Date.now(),
+        type: 'feature',
+        message: prompt,
+        timestamp: new Date().toISOString(),
+        source: window.location.pathname
+      };
+
+      this.runDiagnosticEngine(featureRequest, buildBtn);
+    });
   }
 
   private openDiagnosticModal(error: ErrorData, isHardCrash: boolean) {
@@ -702,6 +798,51 @@ export class AutoHealWidget {
           text-align: center;
         }
       }
+
+      /* Floating Action Button (FAB) */
+      .ah-fab {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        width: 48px;
+        height: 48px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #00f0ff 0%, #bd00ff 100%);
+        box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 99999;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .ah-fab:hover {
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 0 8px 25px rgba(189, 0, 255, 0.6);
+      }
+
+      /* Feature Input Textarea */
+      .ah-feature-input {
+        width: 100%;
+        min-height: 100px;
+        background: rgba(10, 15, 26, 0.8);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        resize: vertical;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .ah-feature-input:focus {
+        border-color: #00f0ff;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 0 10px rgba(0,240,255,0.2);
+      }
+      
       .ah-status-message {
         font-size: 12px;
         color: rgba(255, 255, 255, 0.5);

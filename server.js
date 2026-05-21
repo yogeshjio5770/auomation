@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -121,6 +122,112 @@ app.get('/api/file-context', async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ error: `Failed to read file: ${err.message}` });
+  }
+});
+
+// POST /api/generate-patch (Secure AI Generation on Backend)
+app.post('/api/generate-patch', async (req, res) => {
+  const { file, error, prompt: userPrompt, fileContent } = req.body;
+  const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
+  const site = await getSiteData(siteId);
+
+  const geminiKey = site.settings?.geminiKey || process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
+    return res.status(400).json({ success: false, explanation: 'Gemini API Key is not configured for this site.' });
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(geminiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    let aiInstruction = '';
+    if (error) {
+      aiInstruction = `
+Analyze the following error captured by our diagnostic monitor and write a self-healing patch:
+ERROR METRICS:
+- Type: ${error.type}
+- Message: ${error.message}
+- Source Location: ${error.source || 'N/A'} (Line ${error.line}:${error.column})
+- Stack Trace: ${error.stack || 'N/A'}
+- DOM Snippet: ${error.domContext || 'N/A'}
+Your goal is to repair the file permanently to prevent this error.`;
+    } else if (userPrompt) {
+      aiInstruction = `
+The user has manually requested a new feature or change. 
+USER REQUEST: "${userPrompt}"
+Your goal is to implement this feature perfectly in the file.`;
+    } else {
+      return res.status(400).json({ success: false, explanation: 'Provide either an error or a prompt.' });
+    }
+
+    // Fetch File Content if not provided
+    let actualFileContent = fileContent;
+    if (!actualFileContent) {
+      const relativeFileMap = {
+        sandbox: 'playground/src/components/SandboxView.tsx',
+        css: 'playground/src/index.css',
+        sdk: 'packages/autoheal-sdk/src/widget.ts',
+      };
+      const repoRelativePath = relativeFileMap[file] || file;
+      
+      if (site.settings?.githubRepo && site.settings?.githubToken) {
+        const repo = site.settings.githubRepo;
+        const token = site.settings.githubToken;
+        const branch = site.settings.githubBranch || 'main';
+        const apiRes = await githubApiCall(token, `/repos/${repo}/contents/${repoRelativePath}?ref=${branch}`, 'GET');
+        if (apiRes.status === 200 && apiRes.body?.content) {
+          actualFileContent = Buffer.from(apiRes.body.content, 'base64').toString('utf-8');
+        }
+      }
+      
+      if (!actualFileContent) {
+        const targetPath = FILE_MAP[file] || path.resolve(__dirname, file || '');
+        if (fs.existsSync(targetPath)) {
+          actualFileContent = fs.readFileSync(targetPath, 'utf-8');
+        }
+      }
+    }
+
+    const fullPrompt = `
+You are an expert JavaScript, React, and web engineering agent.
+${aiInstruction}
+
+CURRENT WORKSPACE FILE CONTENT:
+\`\`\`tsx
+${actualFileContent || '/* File content not provided */'}
+\`\`\`
+
+Your response must be a valid JSON object only, with no markdown styling blocks (no \`\`\`json wrappers), satisfying the following structure:
+{
+  "success": true,
+  "explanation": "Detailed explanation of what changed.",
+  "targetPath": "${file || 'unknown'}",
+  "diffCode": "A unified Git-style code diff showing the before (minus lines) and after (plus lines) code fixes.",
+  "healedFileContent": "The COMPLETE updated file content with the bug physically resolved or feature added."
+}
+Ensure your output is strictly valid JSON. Double-check that all strings are escaped correctly.
+`.trim();
+
+    const response = await model.generateContent(fullPrompt);
+    const text = response.response.text().trim();
+    
+    const cleaned = text
+      .replace(/^```json/i, '')
+      .replace(/^```/i, '')
+      .replace(/```$/, '')
+      .trim();
+
+    const json = JSON.parse(cleaned);
+    return res.json({
+      success: json.success ?? true,
+      explanation: json.explanation || 'Self-healed via AI.',
+      diffCode: json.diffCode || '',
+      patchCode: json.patchCode || '',
+      healedFileContent: json.healedFileContent || ''
+    });
+  } catch (e) {
+    console.error('[AutoHeal Server] AI Generation Error:', e);
+    return res.status(500).json({ success: false, explanation: `AI Generation Error: ${e.message}` });
   }
 });
 
