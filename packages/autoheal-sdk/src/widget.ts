@@ -251,7 +251,7 @@ export class AutoHealWidget {
         type: 'feature',
         message: prompt,
         timestamp: new Date().toISOString(),
-        source: window.location.pathname
+        source: window.location.pathname === '/' ? 'src/App.jsx' : window.location.pathname
       };
 
       this.runDiagnosticEngine(featureRequest, buildBtn);

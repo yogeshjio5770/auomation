@@ -186,7 +186,11 @@ Your goal is to implement this feature perfectly in the file.`;
       if (!actualFileContent) {
         const targetPath = FILE_MAP[file] || path.resolve(__dirname, file || '');
         if (fs.existsSync(targetPath)) {
-          actualFileContent = fs.readFileSync(targetPath, 'utf-8');
+          if (fs.lstatSync(targetPath).isFile()) {
+            actualFileContent = fs.readFileSync(targetPath, 'utf-8');
+          } else {
+            console.warn(`[AutoHeal Server] Target path is a directory, cannot read as file: ${targetPath}`);
+          }
         }
       }
     }
