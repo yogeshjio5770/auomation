@@ -9,6 +9,15 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Serve the pre-built AutoHeal SDK bundle so sites can load it via <script> tag
+// e.g. <script src="https://autoheal-4p4q.onrender.com/sdk/autoheal.js"></script>
+app.use('/sdk', express.static(path.join(__dirname, 'public'), {
+  setHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=60');
+  }
+}));
+
 // Resolve target file paths in the workspace
 const FILE_MAP = {
   sandbox: path.resolve(__dirname, 'playground/src/components/SandboxView.tsx'),
