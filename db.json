@@ -63,6 +63,38 @@
         "mobile": 45,
         "conversion": 55
       }
+    },
+    "my-awesome-startup": {
+      "errors": [],
+      "customDb": {},
+      "settings": {
+        "n8nWebhook": "",
+        "vercelDeployHook": "",
+        "gitBranch": "main",
+        "githubRepo": "",
+        "githubToken": "",
+        "modelProvider": "groq",
+        "geminiKey": "",
+        "groqKey": ""
+      },
+      "scores": {
+        "polish": 52,
+        "spacing": 60,
+        "mobile": 45,
+        "conversion": 55
+      }
+    }
+  },
+  "user_api_keys": {
+    "my-awesome-startup": {
+      "siteId": "my-awesome-startup",
+      "groqKey": "",
+      "geminiKey": "",
+      "githubToken": "",
+      "githubRepo": "",
+      "vercelDeployHook": "",
+      "n8nWebhook": "",
+      "updatedAt": "2026-05-22T11:14:40.596Z"
     }
   }
 }
