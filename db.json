@@ -55,7 +55,7 @@
         "githubBranch": "main",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:eab50309d0603715be5e31a70247c9d2:cc88e35c1cb9aabaf6b7d90847682bc2afb393ee7c584c5c986a45386008e2e1"
+        "groqKey": "enc:b3f98d2582973222f2e7e65d34841406:c8f807315d97cfd80e4f0888bbf10068ebe8c16cb18c8e27f7c7e28fb6b4ae96"
       },
       "scores": {
         "polish": 52,
@@ -75,16 +75,6 @@
           "line": 67,
           "column": 32,
           "timestamp": "2026-05-22T13:53:11.955Z"
-        },
-        {
-          "id": "mock_promise_1",
-          "type": "promise",
-          "message": "Unhandled Promise Rejection: Error: Network Error - Failed to fetch endpoint 'https://api.broken-endpoint.dev/data/v1/telemetry' on my-awesome-startup",
-          "stack": "Error: Network Error\n    at fetchTelemetryData (file:///c:/auomation/playground/src/utils/api.ts:14:11)\n    at async loadDashboardData (file:///c:/auomation/playground/src/App.tsx:92:24)",
-          "source": "file:///c:/auomation/playground/src/utils/api.ts",
-          "line": 14,
-          "column": 11,
-          "timestamp": "2026-05-22T13:43:11.955Z"
         },
         {
           "id": "mock_asset_1",
@@ -107,10 +97,10 @@
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/test-autoheal-fresh",
-        "githubToken": "enc:b3d5c25d7e20082c2f4f511d09c50ede:3aa3eb1d42351620816fa1b599f55ba0b3dcb3da461a4c8cf6f3c20d0779ed1d02262eafba524d7ccebd611a997d1540",
+        "githubToken": "enc:9e8e764504bb50755f653c174218720e:bd0b053475e9cafc8860757077982c45fba64179182cfedc2754c660605f4733af008d6dd13329e52478e0679946d65d",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:be67556420215b1b3f010410b2a8329c:10bc8553b51a86eb204222f599ae29130eda577a44777ee12305918b7ddeddbd7443aea8984439e78744298577ce95a83b9367aa0ade266d4c84ce5f3921f525",
+        "groqKey": "enc:eaa720a023c2827252d612fc5a1d52d1:e23cec2749ce5f64e4f47af382862932455e1e2a7e3daf38bac569ebcc93560264c6272b1b8c9047bf2e10f0143dd9105cf309b8b25be7f5d68ead6334d7b88e",
         "githubBranch": "main"
       },
       "scores": {
@@ -124,13 +114,13 @@
   "user_api_keys": {
     "my-awesome-startup": {
       "siteId": "my-awesome-startup",
-      "groqKey": "enc:9417cfb5d114cf954bd8c8c278deb77d:5a3b8afaf9122c6a134fb9625be484fba791792022baee50b06abb13e5bd2486ebbcb7dfbcf3c2a1584adbb8e50f75da334f518dfce83c930780ec049625473a",
+      "groqKey": "enc:acf07c2769da69d74f4f3e0b99b75645:d213e43d98fc4630ace6f64820654d147972181f9e1ca46df9c3a3fe7a0611b2dcb424297bef34ee74163fc031d58ebeab8d10b4d6ed3ffb90ca6e2c9bac4445",
       "geminiKey": "",
-      "githubToken": "enc:8226b3e01ac1a66ca84a1213f14f7f17:beab359aa89241a881819c20892e14a367be8bc3a247f245b8351ed5f6f5a68682ca5e58ca34dcdd935787a55e1f910e",
+      "githubToken": "enc:73a0bb7d55eeeff179a12bad0156aafe:6d8c84817e13cc0e1aa449e567ad5beb6e6fe3c099095cadb97e254dfcaef3f68ae26245b5c54091ed5eafd983614c9b",
       "githubRepo": "yogeshjio5770/test-autoheal-fresh",
       "vercelDeployHook": "",
       "n8nWebhook": "",
-      "updatedAt": "2026-05-22T13:58:11.955Z"
+      "updatedAt": "2026-05-22T13:58:36.139Z"
     }
   }
 }
