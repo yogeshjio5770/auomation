@@ -102,6 +102,10 @@ export class AutoHealDashboard {
     }
   }
 
+  private getEndpoint(): string {
+    return (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+  }
+
   private async checkLocalOllama(): Promise<boolean> {
     try {
       const controller = new AbortController();
@@ -131,9 +135,9 @@ export class AutoHealDashboard {
       this.addTerminalLog(`Connecting to live patcher backend database...`, 'comment');
 
       const [telemetryRes, settingsRes, scoresRes] = await Promise.all([
-        fetch('http://localhost:3001/api/telemetry', { headers }),
-        fetch('http://localhost:3001/api/settings', { headers }),
-        fetch('http://localhost:3001/api/scores', { headers })
+        fetch(`${this.getEndpoint()}/api/telemetry`, { headers }),
+        fetch(`${this.getEndpoint()}/api/settings`, { headers }),
+        fetch(`${this.getEndpoint()}/api/scores`, { headers })
       ]);
 
       const [telemetryData, settingsData, scoresData] = await Promise.all([
@@ -235,7 +239,7 @@ export class AutoHealDashboard {
     this.settings = { ...this.settings, ...updatedSettings };
 
     try {
-      const res = await fetch('http://localhost:3001/api/settings', {
+      const res = await fetch(`${this.getEndpoint()}/api/settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -431,7 +435,7 @@ export class AutoHealDashboard {
       if (patchResult.success) {
         // Clear exception from database/cache
         try {
-          const res = await fetch('http://localhost:3001/api/telemetry/clear', {
+          const res = await fetch(`${this.getEndpoint()}/api/telemetry/clear`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -509,7 +513,7 @@ export class AutoHealDashboard {
       
       // Save scores to remote database
       try {
-        const res = await fetch('http://localhost:3001/api/scores', {
+        const res = await fetch(`${this.getEndpoint()}/api/scores`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -838,7 +842,7 @@ export class AutoHealDashboard {
       reseedTrigger.addEventListener('click', async () => {
         try {
           this.addTerminalLog('Requesting live mock database re-seeding...', 'comment');
-          const res = await fetch('http://localhost:3001/api/telemetry/reseed', {
+          const res = await fetch(`${this.getEndpoint()}/api/telemetry/reseed`, {
             method: 'POST',
             headers: {
               'x-site-id': window.location.host
@@ -867,7 +871,7 @@ export class AutoHealDashboard {
       emptyReseed.addEventListener('click', async () => {
         try {
           this.addTerminalLog('Requesting live mock database re-seeding...', 'comment');
-          const res = await fetch('http://localhost:3001/api/telemetry/reseed', {
+          const res = await fetch(`${this.getEndpoint()}/api/telemetry/reseed`, {
             method: 'POST',
             headers: {
               'x-site-id': window.location.host
