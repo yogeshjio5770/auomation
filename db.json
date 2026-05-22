@@ -55,7 +55,7 @@
         "githubBranch": "main",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:33ccbeaf21b16c35b17d707ac105dcd6:67c06b2ab9eeddd9592b1c9ea7451ed6936eba67c5b17dec902221ad9a52b3de"
+        "groqKey": "enc:690fa31eaaa590e404e3ac11a18002be:2aee5d4e66ab8431c386269ebc5e040dbdfc6432ce43475c562708a7b2dd58af"
       },
       "scores": {
         "polish": 52,
@@ -71,11 +71,11 @@
         "n8nWebhook": "",
         "vercelDeployHook": "",
         "gitBranch": "main",
-        "githubRepo": "yogeshjio5770/auomation",
-        "githubToken": "enc:e21db55bc313b08f65f1cc7338d49e96:13b2b1124dc9cf2c97abe3a261acc3ad213659d600e601a95788b65ce8eeb10a3dd265d4834bbee8bc6d0a8da6e13eb9",
+        "githubRepo": "yogeshjio5770/test-autoheal-fresh",
+        "githubToken": "enc:1f17448bcab670cde803052f9e96bb34:048b2014d919205319457dd300b1d24fbbd2ed4009a27d62ed26c9e8abc35d292ab303a8924e7b97313bf0d55d48cdba",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:91ed16d20409a0943b773da22ab40140:98699d6870bde7680881f396dbe9b7eee4be7d1fdbd8886919a346db87479d8d0b4589296bc8247a74db00bb9a0ce2fa64011583de6f29dc0aa2804f577609a8",
+        "groqKey": "enc:00e93722f34c74df1ff7063d90cef926:657bb34c0d6c4162d02aa45c442fb6abca51d1fd600ce68ba94354482dfff49f46307af20f59c8f8b0fce185e8ba098356d28667b8d9ca15692e7f7236d797dc",
         "githubBranch": "main"
       },
       "scores": {
@@ -89,13 +89,13 @@
   "user_api_keys": {
     "my-awesome-startup": {
       "siteId": "my-awesome-startup",
-      "groqKey": "enc:6c19daf13eeac91fd9bb7039118818b8:56e36cd4f5839bfbda6f097338ecfc9c253dcfbc3da26a9f063849bb1e04180b5d72149466623fe0904d1c8bb82d5a66df9c8b7a7a953269d081c70cca05a4cf",
+      "groqKey": "enc:7765976468bb94723f238295310e2634:723acea8f0ad7b29701f5f4a91d33589bf4543c41cd4b88e9f50fb44f06ebd97fdd53b5a9aacd613fb74dfc4a59ef941cc33edf7d2852f5f7c1614f11f42162a",
       "geminiKey": "",
-      "githubToken": "enc:6de0d8df2f0bb513b8f01a4a8d1bc33b:1807dd5a078c7c2189673595599dcbb6802806416b6efd99ecab6b5befebf52d14722e921fe95d79d1a96e0e34c1fff1",
-      "githubRepo": "yogeshjio5770/auomation",
+      "githubToken": "enc:9a44e4e73be900e595f367f1b6db2764:8087d66e3d7564b0239604b9f093168a04f97b6a196716f022103cac130005e49525d0ddab9832437b78f59d3ff6042d",
+      "githubRepo": "yogeshjio5770/test-autoheal-fresh",
       "vercelDeployHook": "",
       "n8nWebhook": "",
-      "updatedAt": "2026-05-22T13:03:33.536Z"
+      "updatedAt": "2026-05-22T13:07:15.728Z"
     }
   }
 }
