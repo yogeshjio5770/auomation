@@ -55,7 +55,7 @@
         "githubBranch": "main",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:301f7c0f67ee56f5ddfe35af19f2c258:e11b62448528d1329baa2330036cc4d530c435b99aee3614a4c6650bd0f4e342"
+        "groqKey": "enc:33ccbeaf21b16c35b17d707ac105dcd6:67c06b2ab9eeddd9592b1c9ea7451ed6936eba67c5b17dec902221ad9a52b3de"
       },
       "scores": {
         "polish": 52,
@@ -72,10 +72,10 @@
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/auomation",
-        "githubToken": "enc:4af1888528bfbe9767634680ef7ed02f:7149eb037bf5d3128f9d254935e56faf51b0e162a5af2c0ab69aff472e2b4674d8c1dcc944db4a169dacd359a53bed1d",
+        "githubToken": "enc:e21db55bc313b08f65f1cc7338d49e96:13b2b1124dc9cf2c97abe3a261acc3ad213659d600e601a95788b65ce8eeb10a3dd265d4834bbee8bc6d0a8da6e13eb9",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:9b6a5c40e4a4129a5c98e8f93b6d4458:da35c7d431db7c4bebbfb66718ece9f969a623986cb6451223e51a7fb65d0deb4e8667cc69dfe2f2681b121cfe3e42568c369097c24c343c878eeec543268bae",
+        "groqKey": "enc:91ed16d20409a0943b773da22ab40140:98699d6870bde7680881f396dbe9b7eee4be7d1fdbd8886919a346db87479d8d0b4589296bc8247a74db00bb9a0ce2fa64011583de6f29dc0aa2804f577609a8",
         "githubBranch": "main"
       },
       "scores": {
@@ -89,13 +89,13 @@
   "user_api_keys": {
     "my-awesome-startup": {
       "siteId": "my-awesome-startup",
-      "groqKey": "enc:02daa99b6457379a38588bedc6cfe6d8:52ec2346e3d1e980d9d9335bf1efda3d3f07df0d4202084a9356b1aafdb006cb6a3888ae48df98ac416eec66c31e6b838e7cd26d98a9cb422f7fec801415467f",
+      "groqKey": "enc:6c19daf13eeac91fd9bb7039118818b8:56e36cd4f5839bfbda6f097338ecfc9c253dcfbc3da26a9f063849bb1e04180b5d72149466623fe0904d1c8bb82d5a66df9c8b7a7a953269d081c70cca05a4cf",
       "geminiKey": "",
-      "githubToken": "enc:aae433e88b303e3597f5a09819c883e5:51322db8717b6841a135f58091001c89ef294de7070192f862f043467cfaff8a5f3c53f28b8daaa52de25307c945816e",
+      "githubToken": "enc:6de0d8df2f0bb513b8f01a4a8d1bc33b:1807dd5a078c7c2189673595599dcbb6802806416b6efd99ecab6b5befebf52d14722e921fe95d79d1a96e0e34c1fff1",
       "githubRepo": "yogeshjio5770/auomation",
       "vercelDeployHook": "",
       "n8nWebhook": "",
-      "updatedAt": "2026-05-22T12:37:28.343Z"
+      "updatedAt": "2026-05-22T13:03:33.536Z"
     }
   }
 }
