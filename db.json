@@ -55,7 +55,7 @@
         "githubBranch": "main",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "YOUR_GROQ_API_KEY"
+        "groqKey": "enc:c8612cf97fd36086046999b8603acca6:097f406fb94c2ce7c0479f8bb65300a405e4c88157770537ce275a7875288014"
       },
       "scores": {
         "polish": 52,
@@ -71,11 +71,12 @@
         "n8nWebhook": "",
         "vercelDeployHook": "",
         "gitBranch": "main",
-        "githubRepo": "",
-        "githubToken": "",
+        "githubRepo": "yogeshjio5770/auomation",
+        "githubToken": "enc:bc186a36e76798eb81c0336645c83684:a9a2fa6cb5ee4759e39f8ccf1629da488d7541cff7d0df10f914617d63eb496ab5ae88ab0114b5c3b8d246950d4f815f",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": ""
+        "groqKey": "enc:a65bf59444415829a50dd05de12b9402:740d7c235905b0bab9ccda858f1e91723ee312a6576b97720cc23240191c7d417ad2bb9850f3892753490e1f6cbd2e1e",
+        "githubBranch": "main"
       },
       "scores": {
         "polish": 52,
@@ -88,13 +89,13 @@
   "user_api_keys": {
     "my-awesome-startup": {
       "siteId": "my-awesome-startup",
-      "groqKey": "",
+      "groqKey": "enc:1e162548c361f92e7f40a9d1b1ed4ada:7512070999accfbbdcf1817b88b18d332de88a7d080f93399cc1eb63ec2a1335580ed58b0906a4eed6cb19bb7dcd3cef",
       "geminiKey": "",
-      "githubToken": "",
-      "githubRepo": "",
+      "githubToken": "enc:72a29f36f098d63444f9c42d08101197:a9d04898d83d6e7bac982379e10d2fad59878829ac753f210950b94d967ed12745c689b5e05c1863d039b768ee9f4780",
+      "githubRepo": "yogeshjio5770/auomation",
       "vercelDeployHook": "",
       "n8nWebhook": "",
-      "updatedAt": "2026-05-22T11:14:40.596Z"
+      "updatedAt": "2026-05-22T12:33:45.347Z"
     }
   }
 }
