@@ -858,8 +858,11 @@ async function main() {
   console.log(hr());
   console.log();
 
-  // Backend URL is fixed — same master server for every user
-  const masterUrl = 'https://autoheal-4p4q.onrender.com';
+  // Backend URL is dynamic — uses the user's Vercel deployment if available, fallback to primary autoheal Vercel app
+  let masterUrl = result.vercelProjectUrl || 'https://auomation.vercel.app';
+  if (masterUrl && !masterUrl.startsWith('http')) {
+    masterUrl = 'https://' + masterUrl;
+  }
   
   // Auto-detect the Site URL from Vercel deployment if available
   let siteId = result.vercelProjectUrl;
@@ -1073,6 +1076,22 @@ ${snippet}
     } catch (e) {
       console.log(`  ${yellow('⚠')} Vercel deployment failed: ${e.message}`);
       console.log(`  ${dim('You can deploy manually later using:')} ${cyan('npx vercel --prod')}`);
+    }
+
+    // 3. Connect Vercel Project to GitHub Repository
+    if (result.githubRepo) {
+      try {
+        console.log();
+        console.log(dim(`  Connecting Vercel Project to GitHub Repository...`));
+        console.log(dim(`  Running: ${vercelCmd} git connect "https://github.com/${result.githubRepo}" --yes`));
+        const tokenArg = result.vercelToken ? `--token=${result.vercelToken}` : '';
+        const { execSync } = require('child_process');
+        execSync(`${vercelCmd} git connect "https://github.com/${result.githubRepo}" --yes ${tokenArg}`, { cwd: process.cwd(), stdio: 'inherit' });
+        console.log(`  ${green('✓')} Connected Vercel to GitHub successfully!`);
+      } catch (gitConnErr) {
+        console.log(`  ${yellow('⚠')} Vercel Git connection warning: ${gitConnErr.message}`);
+        console.log(`  ${dim('You can connect it manually later using:')} ${cyan('npx vercel git connect')}`);
+      }
     }
   }
 
