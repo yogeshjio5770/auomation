@@ -79,6 +79,104 @@ function githubApiCall(token, urlPath, method = 'GET', body = null) {
   });
 }
 
+const crypto = require('crypto');
+
+const ENCRYPTION_KEY = crypto.scryptSync(
+  'autoheal-secure-database-fallback-key-2026-salt',
+  'salt-key',
+  32
+);
+const IV_LENGTH = 16;
+
+function encrypt(text) {
+  if (!text) return '';
+  if (typeof text !== 'string') text = String(text);
+  if (text.startsWith('enc:')) return text;
+  
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return 'enc:' + iv.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(text) {
+  if (!text) return '';
+  if (typeof text !== 'string') text = String(text);
+  if (!text.startsWith('enc:')) return text;
+  try {
+    const parts = text.split(':');
+    const iv = Buffer.from(parts[1], 'hex');
+    const encryptedText = Buffer.from(parts[2], 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (err) {
+    console.error('[AutoHeal DB] Decryption failed:', err.message);
+    return '';
+  }
+}
+
+const SENSITIVE_KEYS = ['groqKey', 'geminiKey', 'githubToken', 'vercelDeployHook', 'n8nWebhook'];
+
+function encryptDbSensitiveFields(db) {
+  if (!db) return;
+  if (db.sites) {
+    for (const siteId of Object.keys(db.sites)) {
+      const site = db.sites[siteId];
+      if (site && site.settings) {
+        for (const key of SENSITIVE_KEYS) {
+          if (site.settings[key]) {
+            site.settings[key] = encrypt(site.settings[key]);
+          }
+        }
+      }
+    }
+  }
+  if (db.user_api_keys) {
+    for (const siteId of Object.keys(db.user_api_keys)) {
+      const keys = db.user_api_keys[siteId];
+      if (keys) {
+        for (const key of SENSITIVE_KEYS) {
+          if (keys[key]) {
+            keys[key] = encrypt(keys[key]);
+          }
+        }
+      }
+    }
+  }
+}
+
+function decryptDbSensitiveFields(db) {
+  if (!db) return;
+  if (db.sites) {
+    for (const siteId of Object.keys(db.sites)) {
+      const site = db.sites[siteId];
+      if (site && site.settings) {
+        for (const key of SENSITIVE_KEYS) {
+          if (site.settings[key]) {
+            site.settings[key] = decrypt(site.settings[key]);
+          }
+        }
+      }
+    }
+  }
+  if (db.user_api_keys) {
+    for (const siteId of Object.keys(db.user_api_keys)) {
+      const keys = db.user_api_keys[siteId];
+      if (keys) {
+        for (const key of SENSITIVE_KEYS) {
+          if (keys[key]) {
+            keys[key] = decrypt(keys[key]);
+          }
+        }
+      }
+    }
+  }
+}
+
+
 // GET /api/file-context
 app.get('/api/file-context', async (req, res) => {
   const { file } = req.query;
@@ -541,7 +639,9 @@ const DB_PATH = path.join(__dirname, 'db.json');
 function loadLocalDb() {
   try {
     if (fs.existsSync(DB_PATH)) {
-      return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+      const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+      decryptDbSensitiveFields(db);
+      return db;
     }
   } catch (err) {
     console.error('[AutoHeal DB] Error reading local db.json:', err.message);
@@ -551,7 +651,9 @@ function loadLocalDb() {
 
 function saveLocalDb(db) {
   try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+    const dbCopy = JSON.parse(JSON.stringify(db));
+    encryptDbSensitiveFields(dbCopy);
+    fs.writeFileSync(DB_PATH, JSON.stringify(dbCopy, null, 2), 'utf8');
   } catch (err) {
     console.error('[AutoHeal DB] Error writing to local db.json:', err.message);
   }
@@ -581,6 +683,7 @@ async function getLatestDb() {
         const contentStr = Buffer.from(res.body.content, 'base64').toString('utf8');
         const githubDb = JSON.parse(contentStr);
         if (githubDb) {
+          decryptDbSensitiveFields(githubDb);
           if (githubDb.sites) {
             db.sites = { ...db.sites, ...githubDb.sites };
           }
@@ -777,9 +880,12 @@ async function saveSiteData(siteId, siteData) {
         sha = getRes.body.sha;
       }
 
+      const dbCopy = JSON.parse(JSON.stringify(db));
+      encryptDbSensitiveFields(dbCopy);
+
       const putBody = {
         message: 'chore(db): update db.json [skip ci]',
-        content: Buffer.from(JSON.stringify(db, null, 2)).toString('base64'),
+        content: Buffer.from(JSON.stringify(dbCopy, null, 2)).toString('base64'),
         branch: branch
       };
       if (sha) {
