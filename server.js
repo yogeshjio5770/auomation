@@ -675,8 +675,7 @@ async function resolveAndSyncCredentials(siteId, site) {
   }
 
   if (hasChanges) {
-    console.log(`[AutoHeal DB] Resolved and updated credentials for: ${normalizedSiteId}`);
-    await saveSiteData(normalizedSiteId, site);
+    console.log(`[AutoHeal DB] Resolved and updated credentials in-memory for: ${normalizedSiteId}`);
   }
 }
 
