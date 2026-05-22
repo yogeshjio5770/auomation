@@ -571,7 +571,7 @@ export class AutoHealWidget {
               }
             } else {
               logLine(`❌ Push Failed: ${applyData.error}`, 'error');
-              this.showToast(`❌ Push Failed: ${applyData.error}`, 'error');
+              this.showToast(`❌ Push Failed: ${applyData.error}`, 'warning');
               if (footerStatus) footerStatus.textContent = 'Push failed.';
               // Reset button so they can retry
               patchBtn.disabled = false;
@@ -581,7 +581,7 @@ export class AutoHealWidget {
             }
           } catch (e) {
             logLine('❌ Network error communicating with Master Server', 'error');
-            this.showToast('❌ Network error communicating with Master Server', 'error');
+            this.showToast('❌ Network error communicating with Master Server', 'warning');
             if (footerStatus) footerStatus.textContent = 'Network error.';
             // Reset button
             patchBtn.disabled = false;
