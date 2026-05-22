@@ -976,9 +976,27 @@ async function main() {
           injected = true;
           break;
         }
-        // Inject before </head>
+        // Inject before </head>, or fall back to other HTML tag entry points, or prepend
         if (html.includes('</head>')) {
           html = html.replace('</head>', `${snippet}\n  </head>`);
+          fs.writeFileSync(htmlPath, html, 'utf8');
+          console.log(`  ${green('✓')} Auto-injected AutoHeal snippet into ${bold(path.relative(process.cwd(), htmlPath))}`);
+          injected = true;
+          break;
+        } else if (html.includes('<head>')) {
+          html = html.replace('<head>', `<head>\n${snippet}`);
+          fs.writeFileSync(htmlPath, html, 'utf8');
+          console.log(`  ${green('✓')} Auto-injected AutoHeal snippet into ${bold(path.relative(process.cwd(), htmlPath))}`);
+          injected = true;
+          break;
+        } else if (html.includes('<body>')) {
+          html = html.replace('<body>', `<body>\n${snippet}`);
+          fs.writeFileSync(htmlPath, html, 'utf8');
+          console.log(`  ${green('✓')} Auto-injected AutoHeal snippet into ${bold(path.relative(process.cwd(), htmlPath))}`);
+          injected = true;
+          break;
+        } else {
+          html = `${snippet}\n${html}`;
           fs.writeFileSync(htmlPath, html, 'utf8');
           console.log(`  ${green('✓')} Auto-injected AutoHeal snippet into ${bold(path.relative(process.cwd(), htmlPath))}`);
           injected = true;

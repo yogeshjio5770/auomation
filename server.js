@@ -319,6 +319,21 @@ app.post('/api/apply-patch', async (req, res) => {
   if (!files && site.settings && site.settings.n8nWebhook && site.settings.githubRepo && site.settings.githubToken) {
     try {
       const patchContent = content || '';
+
+      // Sync patch to physical local codespace/workspace file
+      const localPath = FILE_MAP[file] || (file ? path.resolve(__dirname, file) : null);
+      if (localPath && localPath.startsWith(__dirname)) {
+        try {
+          const parentDir = path.dirname(localPath);
+          if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true });
+          }
+          fs.writeFileSync(localPath, patchContent, 'utf-8');
+          console.log(`[AutoHeal Server] Synchronously saved patch locally to codespace: ${localPath}`);
+        } catch (localWriteErr) {
+          console.warn(`[AutoHeal Server] Local codespace save skipped (possibly production read-only filesystem): ${localWriteErr.message}`);
+        }
+      }
       const webhookPayload = {
         file: repoRelativePath,
         content: patchContent,
@@ -390,6 +405,24 @@ app.post('/api/apply-patch', async (req, res) => {
       const branch = site.settings.githubBranch || 'main';
 
       const filesToProcess = files ? files : [{ path: repoRelativePath, content: content }];
+
+      // Sync patch to physical local codespace/workspace files
+      for (const f of filesToProcess) {
+        const localPath = FILE_MAP[f.path] || (f.path ? path.resolve(__dirname, f.path) : null);
+        if (localPath && localPath.startsWith(__dirname)) {
+          try {
+            const parentDir = path.dirname(localPath);
+            if (!fs.existsSync(parentDir)) {
+              fs.mkdirSync(parentDir, { recursive: true });
+            }
+            fs.writeFileSync(localPath, f.content, 'utf-8');
+            console.log(`[AutoHeal Server] Synchronously saved patch locally to codespace: ${localPath}`);
+          } catch (localWriteErr) {
+            console.warn(`[AutoHeal Server] Local codespace save skipped (possibly production read-only filesystem): ${localWriteErr.message}`);
+          }
+        }
+      }
+
       let lastSha = null;
 
       for (const f of filesToProcess) {
