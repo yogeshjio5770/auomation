@@ -155,14 +155,22 @@ app.post('/api/generate-patch', async (req, res) => {
   const site = await getSiteData(siteId);
 
   const provider = site.settings?.modelProvider || 'groq';
-  const groqKey = site.settings?.groqKey || process.env.GROQ_API_KEY || process.env.AUTOHEAL_GROQ_KEY;
-  const geminiKey = site.settings?.geminiKey || process.env.GEMINI_API_KEY || process.env.AUTOHEAL_GEMINI_KEY;
+  const groqKey = site.settings?.groqKey;
+  const geminiKey = site.settings?.geminiKey;
 
-  if (provider === 'groq' && !groqKey) {
-    return res.status(400).json({ success: false, explanation: 'Groq API Key is not configured for this site.' });
+  const isPlaceholder = (key) => !key || key.trim() === '' || key.trim().toUpperCase() === 'YOUR_GROQ_API_KEY' || key.trim().toUpperCase() === 'YOUR_GEMINI_API_KEY' || key.trim().toUpperCase() === 'PLACEHOLDER';
+
+  if (provider === 'groq' && isPlaceholder(groqKey)) {
+    return res.status(400).json({
+      success: false,
+      explanation: 'Groq API Key is not configured for this site. Please click the Settings gear icon in the AutoHeal Evolution Dashboard to configure your API key.'
+    });
   }
-  if (provider === 'gemini' && !geminiKey) {
-    return res.status(400).json({ success: false, explanation: 'Gemini API Key is not configured for this site.' });
+  if (provider === 'gemini' && isPlaceholder(geminiKey)) {
+    return res.status(400).json({
+      success: false,
+      explanation: 'Gemini API Key is not configured for this site. Please click the Settings gear icon in the AutoHeal Evolution Dashboard to configure your API key.'
+    });
   }
 
   try {
@@ -549,6 +557,114 @@ function saveLocalDb(db) {
   }
 }
 
+async function resolveAndSyncCredentials(siteId, site) {
+  const normalizedSiteId = siteId || 'localhost:5173';
+  if (!site || !site.settings) return;
+
+  const isPlaceholder = (val) => {
+    if (!val) return true;
+    const s = val.trim().toUpperCase();
+    return s === '' || s === 'YOUR_GROQ_API_KEY' || s === 'YOUR_GEMINI_API_KEY' || s === 'PLACEHOLDER';
+  };
+
+  const keysToSync = [
+    { settingKey: 'groqKey', dbKey: 'groqKey', supabaseCol: 'groq_key', envFallbacks: ['GROQ_API_KEY', 'AUTOHEAL_GROQ_KEY'] },
+    { settingKey: 'geminiKey', dbKey: 'geminiKey', supabaseCol: 'gemini_key', envFallbacks: ['GEMINI_API_KEY', 'AUTOHEAL_GEMINI_KEY'] },
+    { settingKey: 'githubToken', dbKey: 'githubToken', supabaseCol: 'github_token', envFallbacks: ['GITHUB_TOKEN', 'AUTOHEAL_GITHUB_TOKEN'] },
+    { settingKey: 'githubRepo', dbKey: 'githubRepo', supabaseCol: 'github_repo', envFallbacks: ['GITHUB_REPO', 'AUTOHEAL_GITHUB_REPO'] },
+    { settingKey: 'vercelDeployHook', dbKey: 'vercelDeployHook', supabaseCol: 'vercel_deploy_hook', envFallbacks: ['VERCEL_DEPLOY_HOOK', 'AUTOHEAL_VERCEL_DEPLOY_HOOK'] },
+    { settingKey: 'n8nWebhook', dbKey: 'n8nWebhook', supabaseCol: 'n8n_webhook', envFallbacks: ['N8N_WEBHOOK', 'AUTOHEAL_N8N_WEBHOOK'] }
+  ];
+
+  let supabaseKeys = null;
+  if (supabaseUrl && supabaseKey && supabaseUrl !== 'https://example.supabase.co') {
+    try {
+      const { data, error } = await supabase
+        .from('user_api_keys')
+        .select('*')
+        .eq('id', normalizedSiteId)
+        .single();
+      if (!error && data) {
+        supabaseKeys = data;
+      }
+    } catch (err) {
+      console.warn('[AutoHeal DB] Supabase user_api_keys fetch failed:', err.message);
+    }
+  }
+
+  const db = loadLocalDb();
+  const localKeys = (db.user_api_keys && db.user_api_keys[normalizedSiteId]) || {};
+
+  let hasChanges = false;
+  for (const item of keysToSync) {
+    let currentVal = site.settings[item.settingKey];
+
+    if (isPlaceholder(currentVal)) {
+      let resolvedVal = '';
+      if (supabaseKeys && supabaseKeys[item.supabaseCol]) {
+        resolvedVal = supabaseKeys[item.supabaseCol];
+      }
+      if (isPlaceholder(resolvedVal) && localKeys[item.dbKey]) {
+        resolvedVal = localKeys[item.dbKey];
+      }
+      if (isPlaceholder(resolvedVal)) {
+        for (const envVar of item.envFallbacks) {
+          if (process.env[envVar]) {
+            resolvedVal = process.env[envVar];
+            break;
+          }
+        }
+      }
+
+      if (!isPlaceholder(resolvedVal)) {
+        site.settings[item.settingKey] = resolvedVal;
+        hasChanges = true;
+      } else {
+        if (currentVal !== '') {
+          site.settings[item.settingKey] = '';
+          hasChanges = true;
+        }
+      }
+    }
+  }
+
+  if (hasChanges) {
+    console.log(`[AutoHeal DB] Resolved and updated credentials for: ${normalizedSiteId}`);
+    if (!db.sites) db.sites = {};
+    db.sites[normalizedSiteId] = site;
+    if (!db.user_api_keys) db.user_api_keys = {};
+    db.user_api_keys[normalizedSiteId] = {
+      siteId: normalizedSiteId,
+      groqKey: site.settings.groqKey || '',
+      geminiKey: site.settings.geminiKey || '',
+      githubToken: site.settings.githubToken || '',
+      githubRepo: site.settings.githubRepo || '',
+      vercelDeployHook: site.settings.vercelDeployHook || '',
+      n8nWebhook: site.settings.n8nWebhook || '',
+      updatedAt: new Date().toISOString()
+    };
+    saveLocalDb(db);
+
+    if (supabaseUrl && supabaseKey && supabaseUrl !== 'https://example.supabase.co') {
+      supabase.from('sites').upsert({ id: normalizedSiteId, data: site }, { onConflict: 'id' }).catch(err => {
+        console.error('[AutoHeal DB] Async Supabase sync error:', err.message);
+      });
+      supabase.from('user_api_keys').upsert({
+        id: normalizedSiteId,
+        groq_key: site.settings.groqKey || '',
+        gemini_key: site.settings.geminiKey || '',
+        github_token: site.settings.githubToken || '',
+        github_repo: site.settings.githubRepo || '',
+        vercel_deploy_hook: site.settings.vercelDeployHook || '',
+        n8n_webhook: site.settings.n8nWebhook || '',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' }).catch(err => {
+        console.error('[AutoHeal DB] Async Supabase user_api_keys sync error:', err.message);
+      });
+    }
+  }
+}
+
 async function getSiteData(siteId) {
   const normalizedSiteId = siteId || 'localhost:5173';
   let site = null;
@@ -602,6 +718,8 @@ async function getSiteData(siteId) {
     };
     await saveSiteData(normalizedSiteId, site);
   }
+
+  await resolveAndSyncCredentials(normalizedSiteId, site);
   return site;
 }
 
