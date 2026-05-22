@@ -55,7 +55,7 @@
         "githubBranch": "main",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:f90ce3387a6025e31dcaaa6524c1f465:b6728cd6ff9c6ec349c4770918c905824fd7d9814655270c917c08c2821cb50f"
+        "groqKey": "enc:db2df3be466bfac5d20eacfb6829d135:0ff507716cb5bb4d5590629c8a77b309f09438134451c5e3d56dd84505c69bd2"
       },
       "scores": {
         "polish": 52,
@@ -97,13 +97,13 @@
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/test-autoheal-fresh",
-        "githubToken": "enc:205aea681f61b8ef693cb07aa2f5d990:2402241ee52278a66b5366f731785a9367c1f99dbeec8abd5f9bcfaa49f6a4cbfd42673552bcf6a069d83881db3e76e3",
+        "githubToken": "enc:fc82cfbf1480c932bff7a3a9a294a9e6:170def3c0286dab234f36ffcd782d8f0304c8e48980657065781c780633430b6ad6495335886f1997f5a9bba159206c5",
         "modelProvider": "ollama",
         "geminiKey": "",
-        "groqKey": "enc:39c36e552879a51c819efa18a25c291a:a00dc3d0c6ff6ce5296ea1248f4c839801de86fde2c9bbc22c754dc1a9c9c98049bf216176a15a8ece87f9a21d2e83a8893f839e299492d87868a6a1ba72dab7",
+        "groqKey": "enc:158d342ea18b5053ae345eca327cffb2:60038c9991841523db257085fa950d7f85da44097ef429ff040801f0f76522072cafae01dbd6c0041824ca4d289de92dc74ac1061fe0fdfaa240a789395c6ab8",
         "githubBranch": "main",
         "ollamaUrl": "http://localhost:11434",
-        "ollamaModel": "llama3"
+        "ollamaModel": "qwen2.5-coder:7b"
       },
       "scores": {
         "polish": 52,
@@ -116,13 +116,13 @@
   "user_api_keys": {
     "my-awesome-startup": {
       "siteId": "my-awesome-startup",
-      "groqKey": "enc:d7baa3e03ba2f2317f2538ac70e85d3c:49f7a0b8784f1473cb3a12a85323778de5787434a7fc09eb9d360caa7c048a62097a45f4d60674000ac60ac04903a73cc8ac3b9703a42110fb446028729136c1",
+      "groqKey": "enc:2bdb6af2e314c62363f372d5ec5a924f:cfed92f29595399f5e8ab77ac4674197dde21fb69b390626a2b46c9fd618ec1ae0b2d7c37708e715f3b2601d4f9502835e1f540dcbe51fd1f6b9b56242838323",
       "geminiKey": "",
-      "githubToken": "enc:2e2e70e8a1c3437d41f82aaf31942fc1:dd067cc33b378562d69fe8201f19a210fe7b2b3df9014487065f1e09852c451375d3e1fd2f3cafba41f8014428830f38",
+      "githubToken": "enc:5c4f2b97965e40d7f7d0eafb9c512b86:cd5ef71c570ae5b86940e3921cbcd2c9049465b546f423f7bd4cd4ac9ddfd4262c6b49ca461675b67c22ae4c29081b13",
       "githubRepo": "yogeshjio5770/test-autoheal-fresh",
       "vercelDeployHook": "",
       "n8nWebhook": "",
-      "updatedAt": "2026-05-22T14:24:29.273Z"
+      "updatedAt": "2026-05-22T14:26:25.259Z"
     }
   }
 }
