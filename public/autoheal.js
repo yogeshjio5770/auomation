@@ -1,4 +1,4 @@
-var AutoHeal=(()=>{var S=Object.defineProperty;var O=Object.getOwnPropertyDescriptor;var P=Object.getOwnPropertyNames;var M=Object.prototype.hasOwnProperty;var N=(m,e)=>{for(var t in e)S(m,t,{get:e[t],enumerable:!0})},B=(m,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let a of P(e))!M.call(m,a)&&a!==t&&S(m,a,{get:()=>e[a],enumerable:!(s=O(e,a))||s.enumerable});return m};var R=m=>B(S({},"__esModule",{value:!0}),m);var j={};N(j,{AutoHeal:()=>$,AutoHealSDK:()=>I,dashboardInstance:()=>L,emailerInstance:()=>w,patcherInstance:()=>D,widgetInstance:()=>x});var T=class{active=!1;callback=null;originalConsoleError=console.error;originalConsoleWarn=console.warn;constructor(){}start(e){this.active||(this.active=!0,this.callback=e,window.addEventListener("error",this.handleUncaughtError),window.addEventListener("unhandledrejection",this.handleUnhandledRejection),window.addEventListener("error",this.handleAssetError,!0),console.error=(...t)=>{this.originalConsoleError.apply(console,t);let s=t.map(a=>typeof a=="object"?JSON.stringify(a):String(a)).join(" ");s.includes("__autoheal_internal__")||this.triggerCallback({id:"err_"+Math.random().toString(36).substr(2,9),type:"console_error",message:s,timestamp:new Date().toISOString()})},console.warn=(...t)=>{this.originalConsoleWarn.apply(console,t);let s=t.map(a=>typeof a=="object"?JSON.stringify(a):String(a)).join(" ");s.includes("__autoheal_internal__")||this.triggerCallback({id:"warn_"+Math.random().toString(36).substr(2,9),type:"console_warn",message:s,timestamp:new Date().toISOString()})})}stop(){this.active&&(this.active=!1,this.callback=null,window.removeEventListener("error",this.handleUncaughtError),window.removeEventListener("unhandledrejection",this.handleUnhandledRejection),window.removeEventListener("error",this.handleAssetError,!0),console.error=this.originalConsoleError,console.warn=this.originalConsoleWarn)}triggerCallback(e){this.callback&&this.callback(e)}handleUncaughtError=e=>{if(e.target&&e.target!==window)return;let t={id:"crash_"+Math.random().toString(36).substr(2,9),type:"crash",message:e.message||"Unknown uncaught exception",source:e.filename,line:e.lineno,column:e.colno,stack:e.error?e.error.stack:new Error().stack,timestamp:new Date().toISOString()};this.triggerCallback(t)};handleUnhandledRejection=e=>{let t="Promise rejected without reason",s="";e.reason&&(e.reason instanceof Error?(t=e.reason.message,s=e.reason.stack||""):typeof e.reason=="string"?t=e.reason:t=JSON.stringify(e.reason));let a={id:"promise_"+Math.random().toString(36).substr(2,9),type:"promise",message:t,stack:s||new Error().stack,timestamp:new Date().toISOString()};this.triggerCallback(a)};handleAssetError=e=>{let t=e.target;if(!t)return;let s=t.tagName;if(!(s==="IMG"||s==="SCRIPT"||s==="LINK"))return;let o=s==="LINK"?"href":"src",n=t.getAttribute(o)||"unknown source",l=t.outerHTML?t.outerHTML.substring(0,150)+"...":`<${s.toLowerCase()}>`,i={id:"asset_"+Math.random().toString(36).substr(2,9),type:"asset",message:`Failed to load resource: ${s.toLowerCase()} load error.`,source:n,domContext:l,timestamp:new Date().toISOString()};this.triggerCallback(i)}};var C=class{config={enabled:!1};listeners=[];constructor(){}setConfig(e){this.config={...this.config,...e}}subscribe(e){return this.listeners.push(e),()=>{this.listeners=this.listeners.filter(t=>t!==e)}}async sendErrorEmail(e){let t=new Date(e.timestamp).toLocaleString(),s=`\u{1F6A8} AutoHeal Alert [${e.type.toUpperCase()}]: ${e.message.substring(0,50)}`,a=`
+var AutoHeal=(()=>{var _=Object.defineProperty;var R=Object.getOwnPropertyDescriptor;var N=Object.getOwnPropertyNames;var j=Object.prototype.hasOwnProperty;var z=(b,e)=>{for(var t in e)_(b,t,{get:e[t],enumerable:!0})},U=(b,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let a of N(e))!j.call(b,a)&&a!==t&&_(b,a,{get:()=>e[a],enumerable:!(s=R(e,a))||s.enumerable});return b};var q=b=>U(_({},"__esModule",{value:!0}),b);var F={};z(F,{AutoHeal:()=>B,AutoHealSDK:()=>S,dashboardInstance:()=>I,emailerInstance:()=>L,patcherInstance:()=>A,widgetInstance:()=>w});var T=class{active=!1;callback=null;originalConsoleError=console.error;originalConsoleWarn=console.warn;constructor(){}start(e){this.active||(this.active=!0,this.callback=e,window.addEventListener("error",this.handleUncaughtError),window.addEventListener("unhandledrejection",this.handleUnhandledRejection),window.addEventListener("error",this.handleAssetError,!0),console.error=(...t)=>{this.originalConsoleError.apply(console,t);let s=t.map(a=>typeof a=="object"?JSON.stringify(a):String(a)).join(" ");s.includes("__autoheal_internal__")||this.triggerCallback({id:"err_"+Math.random().toString(36).substr(2,9),type:"console_error",message:s,timestamp:new Date().toISOString()})},console.warn=(...t)=>{this.originalConsoleWarn.apply(console,t);let s=t.map(a=>typeof a=="object"?JSON.stringify(a):String(a)).join(" ");s.includes("__autoheal_internal__")||this.triggerCallback({id:"warn_"+Math.random().toString(36).substr(2,9),type:"console_warn",message:s,timestamp:new Date().toISOString()})})}stop(){this.active&&(this.active=!1,this.callback=null,window.removeEventListener("error",this.handleUncaughtError),window.removeEventListener("unhandledrejection",this.handleUnhandledRejection),window.removeEventListener("error",this.handleAssetError,!0),console.error=this.originalConsoleError,console.warn=this.originalConsoleWarn)}triggerCallback(e){this.callback&&this.callback(e)}handleUncaughtError=e=>{if(e.target&&e.target!==window)return;let t={id:"crash_"+Math.random().toString(36).substr(2,9),type:"crash",message:e.message||"Unknown uncaught exception",source:e.filename,line:e.lineno,column:e.colno,stack:e.error?e.error.stack:new Error().stack,timestamp:new Date().toISOString()};this.triggerCallback(t)};handleUnhandledRejection=e=>{let t="Promise rejected without reason",s="";e.reason&&(e.reason instanceof Error?(t=e.reason.message,s=e.reason.stack||""):typeof e.reason=="string"?t=e.reason:t=JSON.stringify(e.reason));let a={id:"promise_"+Math.random().toString(36).substr(2,9),type:"promise",message:t,stack:s||new Error().stack,timestamp:new Date().toISOString()};this.triggerCallback(a)};handleAssetError=e=>{let t=e.target;if(!t)return;let s=t.tagName;if(!(s==="IMG"||s==="SCRIPT"||s==="LINK"))return;let l=s==="LINK"?"href":"src",r=t.getAttribute(l)||"unknown source",i=t.outerHTML?t.outerHTML.substring(0,150)+"...":`<${s.toLowerCase()}>`,n={id:"asset_"+Math.random().toString(36).substr(2,9),type:"asset",message:`Failed to load resource: ${s.toLowerCase()} load error.`,source:r,domContext:i,timestamp:new Date().toISOString()};this.triggerCallback(n)}};var H=class{config={enabled:!1};listeners=[];constructor(){}setConfig(e){this.config={...this.config,...e}}subscribe(e){return this.listeners.push(e),()=>{this.listeners=this.listeners.filter(t=>t!==e)}}async sendErrorEmail(e){let t=new Date(e.timestamp).toLocaleString(),s=`\u{1F6A8} AutoHeal Alert [${e.type.toUpperCase()}]: ${e.message.substring(0,50)}`,a=`
 ===================================================
 AUTOHEAL CRITICAL EXCEPTION LOG REPORT
 ===================================================
@@ -26,166 +26,259 @@ URL: ${window.location.href}
 ===================================================
 Self-Healing UI Diagnostic System
 ===================================================
-    `.trim();return this.listeners.forEach(o=>{try{o({subject:s,recipient:this.config.devEmail||"developer@local.dev",body:a,timestamp:new Date().toISOString(),sentReal:this.config.enabled})}catch{}}),!0}},w=new C;var _=class{appliedPatches=[];originalJSBackups=new Map;constructor(){}injectCSS(e,t){try{let s=`autoheal-style-${e}`,a=document.getElementById(s);a||(a=document.createElement("style"),a.id=s,document.head.appendChild(a)),a.textContent=t;let o=this.appliedPatches.find(n=>n.id===e);return o?(o.code=t,o.timestamp=new Date().toISOString()):this.appliedPatches.push({id:e,type:"css",target:"DOM Head Stylesheet",code:t,timestamp:new Date().toISOString()}),!0}catch(s){return console.error("__autoheal_internal__ Error injecting CSS patch:",s),!1}}overrideFunction(e,t,s){try{let a=t.split("."),o=window;for(let i=0;i<a.length-1;i++)o[a[i]]||(o[a[i]]={}),o=o[a[i]];let n=a[a.length-1],l=`backup_${e}_${t}`;return this.originalJSBackups.has(l)||this.originalJSBackups.set(l,o[n]),o[n]=s,this.appliedPatches.push({id:e,type:"js",target:t,code:s.toString(),timestamp:new Date().toISOString()}),!0}catch(a){return console.error("__autoheal_internal__ Error applying JS function override:",a),!1}}removePatch(e){try{let t=this.appliedPatches.findIndex(a=>a.id===e);if(t===-1)return!1;let s=this.appliedPatches[t];if(s.type==="css"){let a=`autoheal-style-${e}`,o=document.getElementById(a);o&&o.remove()}else if(s.type==="js"){let a=s.target.split("."),o=window;for(let i=0;i<a.length-1;i++)o=o[a[i]];let n=a[a.length-1],l=`backup_${e}_${s.target}`;this.originalJSBackups.has(l)&&(o[n]=this.originalJSBackups.get(l),this.originalJSBackups.delete(l))}return this.appliedPatches.splice(t,1),!0}catch(t){return console.error("__autoheal_internal__ Error removing patch:",t),!1}}getAppliedPatches(){return[...this.appliedPatches]}},D=new _;var H=class{container=null;badge=null;currentErrors=[];onHealHandler=null;constructor(){}init(e){this.onHealHandler=e,this.injectStyles(),this.createBadge(),this.createFab(),this.createWidgetContainer()}reportSoftError(e){this.currentErrors.find(t=>t.id===e.id)||(this.currentErrors.push(e),this.updateBadgeCount())}triggerHardCrashOverlay(e){this.reportSoftError(e),this.openDiagnosticModal(e,!0)}updateBadgeCount(){if(!this.badge)return;let e=this.currentErrors.length;if(e>0){this.badge.style.display="flex";let t=this.badge.querySelector(".ah-badge-count");t&&(t.textContent=String(e));let s=this.currentErrors[this.currentErrors.length-1],a=this.badge.querySelector(".ah-badge-text");a&&(a.textContent=s.type==="crash"?"System Crash Caught!":`Soft Error: ${s.message.substring(0,24)}...`),this.badge.classList.remove("ah-pulse"),this.badge.offsetWidth,this.badge.classList.add("ah-pulse")}else this.badge.style.display="none"}createBadge(){document.getElementById("autoheal-badge")||(this.badge=document.createElement("div"),this.badge.id="autoheal-badge",this.badge.className="ah-badge-pill",this.badge.style.display="none",this.badge.innerHTML=`
+    `.trim();return this.listeners.forEach(l=>{try{l({subject:s,recipient:this.config.devEmail||"developer@local.dev",body:a,timestamp:new Date().toISOString(),sentReal:this.config.enabled})}catch{}}),!0}},L=new H;var D=class{appliedPatches=[];originalJSBackups=new Map;constructor(){}injectCSS(e,t){try{let s=`autoheal-style-${e}`,a=document.getElementById(s);a||(a=document.createElement("style"),a.id=s,document.head.appendChild(a)),a.textContent=t;let l=this.appliedPatches.find(r=>r.id===e);return l?(l.code=t,l.timestamp=new Date().toISOString()):this.appliedPatches.push({id:e,type:"css",target:"DOM Head Stylesheet",code:t,timestamp:new Date().toISOString()}),!0}catch(s){return console.error("__autoheal_internal__ Error injecting CSS patch:",s),!1}}overrideFunction(e,t,s){try{let a=t.split("."),l=window;for(let n=0;n<a.length-1;n++)l[a[n]]||(l[a[n]]={}),l=l[a[n]];let r=a[a.length-1],i=`backup_${e}_${t}`;return this.originalJSBackups.has(i)||this.originalJSBackups.set(i,l[r]),l[r]=s,this.appliedPatches.push({id:e,type:"js",target:t,code:s.toString(),timestamp:new Date().toISOString()}),!0}catch(a){return console.error("__autoheal_internal__ Error applying JS function override:",a),!1}}removePatch(e){try{let t=this.appliedPatches.findIndex(a=>a.id===e);if(t===-1)return!1;let s=this.appliedPatches[t];if(s.type==="css"){let a=`autoheal-style-${e}`,l=document.getElementById(a);l&&l.remove()}else if(s.type==="js"){let a=s.target.split("."),l=window;for(let n=0;n<a.length-1;n++)l=l[a[n]];let r=a[a.length-1],i=`backup_${e}_${s.target}`;this.originalJSBackups.has(i)&&(l[r]=this.originalJSBackups.get(i),this.originalJSBackups.delete(i))}return this.appliedPatches.splice(t,1),!0}catch(t){return console.error("__autoheal_internal__ Error removing patch:",t),!1}}getAppliedPatches(){return[...this.appliedPatches]}},A=new D;var O=class{container=null;badge=null;currentErrors=[];activeError=null;onHealHandler=null;constructor(){}init(e){this.onHealHandler=e,this.injectStyles(),this.createBadge(),this.createFab(),this.createWidgetContainer()}reportSoftError(e){this.currentErrors.find(t=>t.id===e.id)||(this.currentErrors.push(e),this.updateBadgeCount())}triggerHardCrashOverlay(e){this.reportSoftError(e),this.openDiagnosticModal(e,!0)}updateBadgeCount(){if(!this.badge)return;let e=this.currentErrors.length;if(e>0){this.badge.style.display="flex";let t=this.badge.querySelector(".ah-badge-count");t&&(t.textContent=String(e));let s=this.currentErrors[this.currentErrors.length-1],a=this.badge.querySelector(".ah-badge-text");a&&(a.textContent=s.type==="crash"?"System Crash Caught!":`Soft Error: ${s.message.substring(0,24)}...`),this.badge.classList.remove("ah-pulse"),this.badge.offsetWidth,this.badge.classList.add("ah-pulse")}else this.badge.style.display="none"}createBadge(){document.getElementById("autoheal-badge")||(this.badge=document.createElement("div"),this.badge.id="autoheal-badge",this.badge.className="ah-badge-pill",this.badge.style.display="none",this.badge.innerHTML=`
       <div class="ah-badge-icon">\u{1FA7A}</div>
       <div class="ah-badge-details">
         <span class="ah-badge-text">Errors Detected</span>
         <span class="ah-badge-count">0</span>
       </div>
-    `,this.badge.addEventListener("click",()=>{if(this.currentErrors.length>0){let e=this.currentErrors[this.currentErrors.length-1];this.openDiagnosticModal(e,!1)}}),document.body.appendChild(this.badge))}createWidgetContainer(){document.getElementById("autoheal-container")||(this.container=document.createElement("div"),this.container.id="autoheal-container",this.container.className="ah-modal-overlay",document.body.appendChild(this.container))}createFab(){if(document.getElementById("autoheal-fab"))return;let e=document.createElement("div");e.id="autoheal-fab",e.className="ah-fab",e.innerHTML="\u2728",e.title="Ask AI to build a feature",e.addEventListener("click",()=>{this.openFeatureModal()}),document.body.appendChild(e)}openFeatureModal(){if(!this.container)return;this.container.classList.remove("ah-hard-crash"),this.container.style.display="flex",this.container.innerHTML=`
+    `,this.badge.addEventListener("click",()=>{if(this.currentErrors.length>0){let e=this.currentErrors[this.currentErrors.length-1];this.openDiagnosticModal(e,!1)}}),document.body.appendChild(this.badge))}createWidgetContainer(){document.getElementById("autoheal-container")||(this.container=document.createElement("div"),this.container.id="autoheal-container",this.container.className="ah-modal-overlay",document.body.appendChild(this.container))}createFab(){if(document.getElementById("autoheal-fab"))return;let e=document.createElement("div");e.id="autoheal-fab",e.className="ah-fab",e.innerHTML="\u2728",e.title="Ask AI to build a feature",e.addEventListener("click",()=>{this.openFeatureModal()}),document.body.appendChild(e)}openFeatureModal(){this.openUnifiedModal("studio",null,!1)}openDiagnosticModal(e,t){this.openUnifiedModal("studio",e,t)}openUnifiedModal(e="studio",t=null,s=!1){if(!this.container)return;this.activeError=t,s?(document.body.classList.add("ah-blur-active"),this.container.classList.add("ah-hard-crash")):this.container.classList.remove("ah-hard-crash"),this.container.style.display="flex",this.container.innerHTML=`
       <div class="ah-diag-modal">
         <div class="ah-diag-header">
           <div class="ah-diag-title">
-            <span class="ah-pulse-dot" style="background:#00f0ff"></span>
-            <span>AUTOHEAL AI STUDIO</span>
+            <span class="ah-pulse-dot" style="background:${t?"#ff4444":"#00f0ff"}; box-shadow: 0 0 8px ${t?"#ff4444":"#00f0ff"};"></span>
+            <span>AUTOHEAL EVOLUTION SYSTEM</span>
           </div>
-          <div>
-            <button class="ah-settings-btn" id="ah-settings-btn" title="Settings">\u2699\uFE0F</button>
-            <button class="ah-close-btn" id="ah-close-modal-btn">\u2715</button>
-          </div>
+          <button class="ah-close-btn" id="ah-close-modal-btn">\u2715</button>
         </div>
-        
+
+        <div class="ah-tab-header">
+          <button class="ah-tab-btn" id="ah-tab-btn-studio">\u2728 AI Studio</button>
+          <button class="ah-tab-btn" id="ah-tab-btn-logs">\u{1F6D1} Telemetry Logs</button>
+          <button class="ah-tab-btn" id="ah-tab-btn-settings">\u2699\uFE0F Settings</button>
+        </div>
+
+        <!-- \u2500\u2500 TAB 1: AI STUDIO \u2500\u2500 -->
         <div class="ah-diag-body" id="ah-feature-view">
-          <div class="ah-section">
-            <div class="ah-section-title">\u2728 What would you like to build?</div>
-            <textarea class="ah-feature-input" id="ah-feature-prompt" placeholder="e.g. Add a contact form to this page, or change the background to dark mode..."></textarea>
-          </div>
-
-          <div class="ah-section ah-diag-flow">
-            <div class="ah-console" id="ah-diag-console" style="display:none; height:150px"></div>
-          </div>
-
-          <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
-            <div class="ah-section-title">\u{1F52E} Proposed UI Upgrade</div>
-            <div class="ah-diff-viewer" id="ah-diff-box">
-              <!-- Content filled dynamically -->
-            </div>
-          </div>
+          <!-- Populated dynamically -->
         </div>
-
         <div class="ah-diag-footer" id="ah-feature-footer">
-          <div class="ah-status-message" id="ah-footer-status">Ready to build.</div>
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- \u2500\u2500 TAB 2: TELEMETRY LOGS \u2500\u2500 -->
+        <div class="ah-diag-body" id="ah-logs-view" style="display:none; overflow-y:auto; max-height:400px;">
+          <div style="text-align:center; padding: 20px; color:#888;">Loading telemetry exception records...</div>
+        </div>
+        <div class="ah-diag-footer" id="ah-logs-footer" style="display:none;">
+          <div class="ah-status-message">Historical caught exceptions.</div>
           <div class="ah-actions">
-            <button class="ah-btn primary" id="ah-build-btn">
-              <span class="ah-btn-spinner" id="ah-btn-loader" style="display: none;"></span>
-              <span id="ah-btn-text">BUILD FEATURE \u{1F680}</span>
-            </button>
+            <button class="ah-btn secondary" id="ah-logs-reseed-btn">\u{1F504} Reseed Mock Logs</button>
           </div>
         </div>
 
-        <div class="ah-diag-body" id="ah-settings-view" style="display:none; overflow-y:auto; max-height:350px;">
-          <div class="ah-section">
-            <div class="ah-section-title">\u2699\uFE0F AI Provider Settings</div>
-            <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your own API key to power the AI Studio. Your key is securely stored in the AutoHeal Master Database.</p>
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Groq API Key (Llama 3)</label>
-              <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:36px; border-radius:4px; font-family: monospace;" placeholder="gsk_..." />
-            </div>
-            <div style="margin-bottom: 12px;">
-              <label style="display:flex; align-items:center; cursor:pointer; font-size:13px; color:#fff;">
-                <input type="checkbox" id="ah-autonomous-toggle" style="margin-right:8px; cursor:pointer; width:16px; height:16px;" />
-                \u26A1 Enable Autonomous Auto-Heal (Zero-Click)
-              </label>
-              <p style="color:#888; font-size:11px; margin-top:4px; margin-left: 24px;">Automatically catches crashes, writes a patch, and deploys to GitHub instantly without asking.</p>
-            </div>
-          </div>
-
-          <div class="ah-section" style="border-top: 1px solid #333; padding-top: 16px; margin-top: 16px;">
-            <div class="ah-section-title">\u{1F4E6} Git & Deployment Settings</div>
-            <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your deployment integrations to automatically push patches to live production.</p>
-            
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">GitHub Repository (owner/repo)</label>
-              <input type="text" id="ah-github-repo-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="e.g. Octocat/Hello-World" />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">GitHub Personal Access Token (PAT)</label>
-              <input type="password" id="ah-github-token-input" class="ah-feature-input" style="height:36px; border-radius:4px; font-family: monospace;" placeholder="ghp_..." />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Vercel Deploy Hook URL</label>
-              <input type="text" id="ah-vercel-hook-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="https://api.vercel.com/v1/integrations/deploy/..." />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">N8N Cloud Bridge Webhook URL (Optional)</label>
-              <input type="text" id="ah-n8n-webhook-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="https://creativekulhad.onrender.com/webhook/..." />
-            </div>
-          </div>
+        <!-- \u2500\u2500 TAB 3: SETTINGS \u2500\u2500 -->
+        <div class="ah-diag-body" id="ah-settings-view" style="display:none; overflow-y:auto; max-height:400px;">
+          <!-- Populated dynamically -->
         </div>
-        
         <div class="ah-diag-footer" id="ah-settings-footer" style="display:none;">
-          <div class="ah-status-message" id="ah-settings-status" style="color: #4ade80;"></div>
+          <div class="ah-status-message" id="ah-settings-status" style="color: #00ff66;"></div>
           <div class="ah-actions">
             <button class="ah-btn primary" id="ah-save-settings-btn">SAVE SETTINGS</button>
           </div>
         </div>
       </div>
-    `,document.getElementById("ah-close-modal-btn")?.addEventListener("click",()=>this.closeDiagnosticModal());let e=document.getElementById("ah-feature-view"),t=document.getElementById("ah-feature-footer"),s=document.getElementById("ah-settings-view"),a=document.getElementById("ah-settings-footer"),o=!1;document.getElementById("ah-settings-btn")?.addEventListener("click",async()=>{if(o=!o,o){e.style.display="none",t.style.display="none",s.style.display="block",a.style.display="flex";let i=document.getElementById("ah-autonomous-toggle");i&&(i.checked=localStorage.getItem("autoheal_autonomous")==="true");try{let c=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",p=window.AUTOHEAL_SITE_ID||window.location.host,h=(await(await fetch(`${c}/api/settings`,{headers:{"x-site-id":p}})).json()).settings||{};h.groqKey&&(document.getElementById("ah-groq-key-input").value=h.groqKey),h.githubRepo&&(document.getElementById("ah-github-repo-input").value=h.githubRepo),h.githubToken&&(document.getElementById("ah-github-token-input").value=h.githubToken),h.vercelDeployHook&&(document.getElementById("ah-vercel-hook-input").value=h.vercelDeployHook),h.n8nWebhook&&(document.getElementById("ah-n8n-webhook-input").value=h.n8nWebhook)}catch(c){console.warn("AutoHeal: Could not fetch settings",c)}}else e.style.display="block",t.style.display="flex",s.style.display="none",a.style.display="none"}),document.getElementById("ah-save-settings-btn")?.addEventListener("click",async()=>{let i=document.getElementById("ah-groq-key-input").value.trim(),c=document.getElementById("ah-github-repo-input")?.value.trim()||"",p=document.getElementById("ah-github-token-input")?.value.trim()||"",g=document.getElementById("ah-vercel-hook-input")?.value.trim()||"",b=document.getElementById("ah-n8n-webhook-input")?.value.trim()||"",h=document.getElementById("ah-autonomous-toggle");h&&localStorage.setItem("autoheal_autonomous",h.checked?"true":"false");let y=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",r=window.AUTOHEAL_SITE_ID||window.location.host,d=document.getElementById("ah-settings-status");d.textContent="Saving...";try{(await(await fetch(`${y}/api/settings`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":r},body:JSON.stringify({settings:{groqKey:i,githubRepo:c,githubToken:p,vercelDeployHook:g,n8nWebhook:b,modelProvider:"groq"}})})).json()).success?(d.textContent="Settings saved successfully! \u2705",setTimeout(()=>{d.textContent=""},3e3)):d.textContent="Error saving settings."}catch{d.textContent="Failed to connect to Master Server."}});let n=document.getElementById("ah-build-btn"),l=document.getElementById("ah-feature-prompt");n.addEventListener("click",()=>{let i=l.value.trim();if(!i)return;l.disabled=!0,n.disabled=!0,n.classList.add("disabled");let c=document.getElementById("ah-btn-loader");c&&(c.style.display="inline-block");let p=document.getElementById("ah-btn-text");p&&(p.textContent="BUILDING...");let g=document.getElementById("ah-diag-console");g&&(g.style.display="block");let b={id:"feature_"+Date.now(),type:"feature",message:i,timestamp:new Date().toISOString(),source:window.location.pathname==="/"?"src/App.jsx":window.location.pathname};this.runDiagnosticEngine(b,n)})}openDiagnosticModal(e,t){if(!this.container)return;t?(document.body.classList.add("ah-blur-active"),this.container.classList.add("ah-hard-crash")):this.container.classList.remove("ah-hard-crash"),this.container.style.display="flex";let s=new Date(e.timestamp).toLocaleTimeString();this.container.innerHTML=`
-      <div class="ah-diag-modal">
-        <div class="ah-diag-header">
-          <div class="ah-diag-title">
-            <span class="ah-pulse-dot red"></span>
-            <span>AUTOHEAL SYSTEM DIAGNOSTICS</span>
+    `,document.getElementById("ah-close-modal-btn")?.addEventListener("click",()=>this.closeDiagnosticModal());let a=document.getElementById("ah-tab-btn-studio"),l=document.getElementById("ah-tab-btn-logs"),r=document.getElementById("ah-tab-btn-settings"),i=document.getElementById("ah-feature-view"),n=document.getElementById("ah-logs-view"),p=document.getElementById("ah-settings-view"),c=document.getElementById("ah-feature-footer"),m=document.getElementById("ah-logs-footer"),v=document.getElementById("ah-settings-footer"),h=d=>{a.classList.toggle("active",d==="studio"),l.classList.toggle("active",d==="logs"),r.classList.toggle("active",d==="settings"),i.style.display=d==="studio"?"block":"none",n.style.display=d==="logs"?"block":"none",p.style.display=d==="settings"?"block":"none",c&&(c.style.display=d==="studio"?"flex":"none"),m&&(m.style.display=d==="logs"?"flex":"none"),v&&(v.style.display=d==="settings"?"flex":"none"),d==="logs"?this.fetchAndRenderLogs():d==="settings"&&this.fetchAndRenderSettings()};a.addEventListener("click",()=>h("studio")),l.addEventListener("click",()=>h("logs")),r.addEventListener("click",()=>h("settings")),this.renderStudioTab(this.activeError),document.getElementById("ah-logs-reseed-btn")?.addEventListener("click",async()=>{let d=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",o=window.AUTOHEAL_SITE_ID||window.location.host;try{await fetch(`${d}/api/telemetry/reseed`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":o}}),this.showToast("\u{1F504} Telemetry mock logs reseeded!","success"),this.fetchAndRenderLogs()}catch{}}),h(e)}renderStudioTab(e){let t=document.getElementById("ah-feature-view"),s=document.getElementById("ah-feature-footer");if(!(!t||!s))if(e){let a=new Date(e.timestamp).toLocaleTimeString();t.innerHTML=`
+        <div class="ah-section">
+          <div class="ah-section-title">\u{1F6D1} Captured Exception [${e.type.toUpperCase()}]</div>
+          <div class="ah-error-card">
+            <div class="ah-error-msg">${e.message}</div>
+            ${e.source?`<div class="ah-error-source">URL: <span>${e.source}</span> ${e.line?`(Line ${e.line}:${e.column})`:""}</div>`:""}
+            ${e.domContext?`<div class="ah-error-dom">DOM: <code>${this.escapeHTML(e.domContext)}</code></div>`:""}
+            <div class="ah-timestamp">Caught at ${a} \u2022 Logs emailed to developer inbox \u2709\uFE0F</div>
           </div>
-          <button class="ah-close-btn" id="ah-close-modal-btn">\u2715</button>
         </div>
-        
-        <div class="ah-diag-body">
-          <div class="ah-section">
-            <div class="ah-section-title">\u{1F6D1} Captured Exception [${e.type.toUpperCase()}]</div>
-            <div class="ah-error-card">
-              <div class="ah-error-msg">${e.message}</div>
-              ${e.source?`<div class="ah-error-source">URL: <span>${e.source}</span> ${e.line?`(Line ${e.line}:${e.column})`:""}</div>`:""}
-              ${e.domContext?`<div class="ah-error-dom">DOM: <code>${this.escapeHTML(e.domContext)}</code></div>`:""}
-              <div class="ah-timestamp">Caught at ${s} \u2022 Logs emailed to developer inbox \u2709\uFE0F</div>
+
+        <div class="ah-section ah-diag-flow">
+          <div class="ah-scanner-container" id="ah-scanner-box">
+            <div class="ah-radar">
+              <div class="ah-radar-sweep"></div>
+              <div class="ah-radar-circle circle-1"></div>
+              <div class="ah-radar-circle circle-2"></div>
+              <div class="ah-radar-circle circle-3"></div>
             </div>
+            <div class="ah-scanner-label">SCANNING FOR SOLUTIONS...</div>
           </div>
 
-          <div class="ah-section ah-diag-flow">
-            <div class="ah-scanner-container" id="ah-scanner-box">
-              <div class="ah-radar">
-                <div class="ah-radar-sweep"></div>
-                <div class="ah-radar-circle circle-1"></div>
-                <div class="ah-radar-circle circle-2"></div>
-                <div class="ah-radar-circle circle-3"></div>
+          <div class="ah-console" id="ah-diag-console">
+            <div class="ah-console-line comment">> AutoHeal SDK initialized.</div>
+            <div class="ah-console-line error">> INTERCEPTED: ${e.type.toUpperCase()} error detected.</div>
+            <div class="ah-console-line">> Packaging dump data...</div>
+            <div class="ah-console-line success">> Error log emailed to developer email address successfully!</div>
+            <div class="ah-console-line info">> Spawning AI Healing Agent...</div>
+          </div>
+        </div>
+
+        <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
+          <div class="ah-section-title">\u{1F52E} Proposed Repair Patch</div>
+          <div class="ah-diff-viewer" id="ah-diff-box">
+            <!-- Content filled dynamically -->
+          </div>
+        </div>
+      `,s.innerHTML=`
+        <div class="ah-status-message" id="ah-footer-status">Analyzing stack trace...</div>
+        <div class="ah-actions">
+          <button class="ah-btn secondary" id="ah-ignore-btn">Ignore Error</button>
+          <button class="ah-btn primary disabled" id="ah-patch-btn" disabled>
+            <span class="ah-btn-spinner" id="ah-btn-loader" style="display: inline-block;"></span>
+            <span id="ah-btn-text">Waiting for AI...</span>
+          </button>
+        </div>
+      `,document.getElementById("ah-ignore-btn")?.addEventListener("click",()=>this.closeDiagnosticModal());let l=document.getElementById("ah-patch-btn");this.runDiagnosticEngine(e,l)}else{t.innerHTML=`
+        <div class="ah-section">
+          <div class="ah-section-title">\u2728 What would you like to build?</div>
+          <textarea class="ah-feature-input" id="ah-feature-prompt" placeholder="e.g. Add a contact form to this page, or change the background to dark mode..."></textarea>
+        </div>
+
+        <div class="ah-section ah-diag-flow" id="ah-feature-flow-section" style="display:none;">
+          <div class="ah-console" id="ah-diag-console" style="height:150px"></div>
+        </div>
+
+        <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
+          <div class="ah-section-title">\u{1F52E} Proposed UI Upgrade</div>
+          <div class="ah-diff-viewer" id="ah-diff-box">
+            <!-- Content filled dynamically -->
+          </div>
+        </div>
+      `,s.innerHTML=`
+        <div class="ah-status-message" id="ah-footer-status">Ready to build.</div>
+        <div class="ah-actions">
+          <button class="ah-btn primary" id="ah-build-btn">
+            <span class="ah-btn-spinner" id="ah-btn-loader" style="display: none;"></span>
+            <span id="ah-btn-text">BUILD FEATURE \u{1F680}</span>
+          </button>
+        </div>
+      `;let a=document.getElementById("ah-build-btn"),l=document.getElementById("ah-feature-prompt");a?.addEventListener("click",()=>{let r=l.value.trim();if(!r)return;l.disabled=!0,a.disabled=!0,a.classList.add("disabled");let i=document.getElementById("ah-btn-loader");i&&(i.style.display="inline-block");let n=document.getElementById("ah-btn-text");n&&(n.textContent="BUILDING...");let p=document.getElementById("ah-feature-flow-section");p&&(p.style.display="block");let c={id:"feature_"+Date.now(),type:"feature",message:r,timestamp:new Date().toISOString(),source:window.location.pathname==="/"?"src/App.jsx":window.location.pathname};this.runDiagnosticEngine(c,a)})}}async fetchAndRenderLogs(){let e=document.getElementById("ah-logs-view");if(!e)return;e.innerHTML='<div style="text-align:center; padding: 30px; color:#888;"><span class="ah-btn-spinner" style="display:inline-block; margin-right:8px;"></span>Loading exception logs...</div>';let t=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",s=window.AUTOHEAL_SITE_ID||window.location.host;try{let r=(await(await fetch(`${t}/api/telemetry?siteId=${s}`,{headers:{"x-site-id":s}})).json()).errors||[];if(r.length===0){e.innerHTML=`
+          <div style="text-align:center; padding: 40px 20px;">
+            <div style="font-size:32px; margin-bottom:12px;">\u{1F6E1}\uFE0F</div>
+            <div style="font-weight:700; font-size:15px; margin-bottom:6px; color:#fff;">No exceptions caught!</div>
+            <div style="font-size:12px; color:#888; margin-bottom:16px;">This website is currently completely healthy.</div>
+            <button class="ah-btn secondary" id="ah-logs-empty-reseed" style="margin: 0 auto;">Reseed Mock Errors</button>
+          </div>
+        `,document.getElementById("ah-logs-empty-reseed")?.addEventListener("click",async()=>{await fetch(`${t}/api/telemetry/reseed`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":s}}),this.fetchAndRenderLogs()});return}e.innerHTML=`
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          ${r.map(i=>{let n=new Date(i.timestamp).toLocaleTimeString(),p=new Date(i.timestamp).toLocaleDateString(),c=i.type==="crash";return`
+              <div style="background:rgba(255,255,255,0.02); border:1px solid ${c?"rgba(255,68,68,0.2)":"rgba(255,215,0,0.1)"}; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; text-transform:uppercase; background:${c?"rgba(255,68,68,0.15)":"rgba(255,215,0,0.1)"}; color:${c?"#ff4444":"#ffd700"}; border:1px solid ${c?"rgba(255,68,68,0.25)":"rgba(255,215,0,0.2)"};">
+                    ${i.type}
+                  </span>
+                  <span style="font-size:10px; color:#666;">${p} ${n}</span>
+                </div>
+                <div style="font-size:13px; font-weight:600; color:#e6edf3; word-break:break-word;">
+                  ${i.message}
+                </div>
+                ${i.source?`
+                  <div style="font-size:11px; color:#8b949e; font-family:monospace; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px; word-break:break-all;">
+                    Source: ${i.source.substring(i.source.lastIndexOf("/")+1)} ${i.line?`:${i.line}`:""}
+                  </div>
+                `:""}
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px; border-top:1px solid rgba(255,255,255,0.04); padding-top:8px;">
+                  <button class="ah-btn secondary small ah-log-heal-btn" data-id="${i.id}" style="padding:4px 10px; font-size:10px; height:24px;">\u{1FA7A} Heal Exception</button>
+                  <button class="ah-btn secondary small ah-log-clear-btn" data-id="${i.id}" style="padding:4px 10px; font-size:10px; height:24px; border-color:rgba(255,68,68,0.2); color:#ff6b6b;">\u2715 Clear</button>
+                </div>
               </div>
-              <div class="ah-scanner-label">SCANNING FOR SOLUTIONS...</div>
-            </div>
+            `}).join("")}
+        </div>
+      `,e.querySelectorAll(".ah-log-heal-btn").forEach(i=>{i.addEventListener("click",n=>{let p=n.currentTarget.dataset.id,c=r.find(m=>m.id===p);c&&(this.activeError=c,document.getElementById("ah-tab-btn-studio").click())})}),e.querySelectorAll(".ah-log-clear-btn").forEach(i=>{i.addEventListener("click",async n=>{let p=n.currentTarget.dataset.id;if(p)try{await fetch(`${t}/api/telemetry/clear`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":s},body:JSON.stringify({id:p})}),this.showToast("\u{1F5D1}\uFE0F Exception record cleared!","success"),this.fetchAndRenderLogs()}catch{}})})}catch{e.innerHTML='<div style="text-align:center; padding: 20px; color:#ff4444;">Failed to fetch exceptions list.</div>'}}async fetchAndRenderSettings(){let e=document.getElementById("ah-settings-view");if(!e)return;e.innerHTML=`
+      <div style="margin-bottom:16px;" id="ah-ollama-detector-banner">
+        <div style="text-align:center; padding: 10px; font-size:12px; color:#888;">Checking local Ollama status...</div>
+      </div>
 
-            <div class="ah-console" id="ah-diag-console">
-              <div class="ah-console-line comment">> AutoHeal SDK initialized.</div>
-              <div class="ah-console-line error">> INTERCEPTED: ${e.type.toUpperCase()} error detected.</div>
-              <div class="ah-console-line">> Packaging dump data...</div>
-              <div class="ah-console-line success">> Error log emailed to developer email address successfully!</div>
-              <div class="ah-console-line info">> Spawning AI Healing Agent...</div>
-            </div>
-          </div>
+      <div class="ah-section">
+        <div class="ah-section-title">\u2699\uFE0F AI Brain Provider</div>
+        <div class="ah-form-group">
+          <select id="ah-provider-select" class="ah-feature-input" style="height:38px; padding:0 10px; background:#0d1117; cursor:pointer;">
+            <option value="gemini">Google Gemini (Cloud)</option>
+            <option value="groq">Groq AI (Llama 3)</option>
+            <option value="ollama">Ollama (Local LLM)</option>
+          </select>
+        </div>
 
-          <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
-            <div class="ah-section-title">\u{1F52E} Proposed Repair Patch</div>
-            <div class="ah-diff-viewer" id="ah-diff-box">
-              <!-- Content filled dynamically -->
-            </div>
+        <!-- Gemini Options -->
+        <div id="ah-settings-gemini-section" style="display:none; margin-bottom:12px;">
+          <div class="ah-form-group">
+            <label class="ah-label">Gemini API Key</label>
+            <input type="password" id="ah-gemini-key-input" class="ah-feature-input" style="height:36px; font-family:monospace;" placeholder="AIzaSy..." />
+            <div style="color:#8b949e; font-size:11px; margin-top:4px;">\u{1F4A1} Get a free key at <a href="https://aistudio.google.com/" target="_blank" style="color:#00f0ff; text-decoration:none;">aistudio.google.com</a></div>
           </div>
         </div>
 
-        <div class="ah-diag-footer">
-          <div class="ah-status-message" id="ah-footer-status">Analyzing stack trace...</div>
-          <div class="ah-actions">
-            <button class="ah-btn secondary" id="ah-ignore-btn">Ignore Error</button>
-            <button class="ah-btn primary disabled" id="ah-patch-btn" disabled>
-              <span class="ah-btn-spinner" id="ah-btn-loader" style="display: inline-block;"></span>
-              <span id="ah-btn-text">Waiting for AI...</span>
-            </button>
+        <!-- Groq Options -->
+        <div id="ah-settings-groq-section" style="display:none; margin-bottom:12px;">
+          <div class="ah-form-group">
+            <label class="ah-label">Groq API Key</label>
+            <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:36px; font-family:monospace;" placeholder="gsk_..." />
+            <div style="color:#8b949e; font-size:11px; margin-top:4px;">\u{1F4A1} Get a key at <a href="https://console.groq.com/" target="_blank" style="color:#00f0ff; text-decoration:none;">console.groq.com</a></div>
           </div>
+        </div>
+
+        <!-- Ollama Options -->
+        <div id="ah-settings-ollama-section" style="display:none; margin-bottom:12px;">
+          <div style="display:flex; gap:10px;">
+            <div class="ah-form-group" style="flex:1;">
+              <label class="ah-label">Ollama Host</label>
+              <input type="text" id="ah-ollama-url-input" class="ah-feature-input" style="height:36px;" placeholder="http://localhost:11434" />
+            </div>
+            <div class="ah-form-group" style="flex:1;">
+              <label class="ah-label">Ollama Model</label>
+              <input type="text" id="ah-ollama-model-input" class="ah-feature-input" style="height:36px;" placeholder="llama3" />
+            </div>
+          </div>
+          <div style="color:#8b949e; font-size:11px; margin-top:4px;">Ensure your local server is running by executing <code>ollama serve</code>. Default port: 11434.</div>
+        </div>
+
+        <div class="ah-form-group" style="margin-top:12px;">
+          <label style="display:flex; align-items:center; cursor:pointer; font-size:13px; color:#fff;">
+            <input type="checkbox" id="ah-autonomous-toggle" style="margin-right:8px; cursor:pointer; width:16px; height:16px;" />
+            \u26A1 Enable Autonomous Auto-Heal (Zero-Click)
+          </label>
+          <p style="color:#888; font-size:11px; margin-top:4px; margin-left:24px;">Automatically catches crashes, writes a patch, and deploys instantly in the background.</p>
         </div>
       </div>
-    `,document.getElementById("ah-close-modal-btn")?.addEventListener("click",()=>this.closeDiagnosticModal()),document.getElementById("ah-ignore-btn")?.addEventListener("click",()=>this.closeDiagnosticModal());let a=document.getElementById("ah-patch-btn");this.runDiagnosticEngine(e,a)}async runDiagnosticEngine(e,t){let s=document.getElementById("ah-diag-console"),a=document.getElementById("ah-footer-status"),o=document.getElementById("ah-scanner-box"),n=document.getElementById("ah-patch-box"),l=document.getElementById("ah-diff-box");if(!s)return;let i=(r,d="default")=>{let u=document.createElement("div");u.className=`ah-console-line ${d}`,u.textContent=`> ${r}`,s.appendChild(u),s.scrollTop=s.scrollHeight};await this.delay(1e3),i("Analyzing stack trace patterns...","info"),a&&(a.textContent="Analyzing source-code stack trace..."),await this.delay(1200),i("Extracting code context around error location...","info"),await this.delay(1e3),i("Consulting AI LLM healing patterns...","comment"),a&&(a.textContent="Generating surgical repair code...");let c=!1,p="",g="",b="",h=e.source||"sandbox",y=[];if(this.onHealHandler)try{let r=await this.onHealHandler(e);c=r.success,p=r.diffCode,g=r.explanation||"",b=r.healedFileContent||"",r.targetPath&&(h=r.targetPath),r.files&&(y=r.files)}catch{i("Failed to contact AI Healer Agent.","error")}if(await this.delay(800),c&&p){if(i("Surgical fix generated successfully!","success"),i("Ready to hot-patch runtime environment.","success"),a&&(a.textContent="Patch compiled successfully!"),o&&(o.style.display="none"),n&&(n.style.display="block"),l&&(l.innerHTML=this.renderDiff(p)),t){t.disabled=!1,t.classList.remove("disabled");let r=document.getElementById("ah-btn-loader");r&&(r.style.display="none");let d=document.getElementById("ah-btn-text");d&&(d.textContent="APPLY LIVE PATCH \u{1FA7A}"),t.onclick=async()=>{t.disabled=!0,t.classList.add("disabled"),r&&(r.style.display="inline-block"),d&&(d.textContent="Applying Patch..."),a&&(a.textContent="Executing hot-patch sequence..."),i("Initiating remote deployment pipeline...","info"),await this.delay(600),i("Packaging patch files...","info"),await this.delay(600),i("Contacting AutoHeal backend server...","info");try{let u=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",v=window.AUTOHEAL_SITE_ID||window.location.host,f=await(await fetch(`${u}/api/apply-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":v},body:JSON.stringify({files:y.length>0?y:void 0,content:b,file:h,prompt:e.message})})).json();if(f.success){if(i("Backend processed request successfully! \u2705","success"),await this.delay(600),f.mode==="n8n-cloud"?(i("Route: Forwarded to N8N Cloud Bridge \u{1F310}","success"),f.n8nResponse&&f.n8nResponse.message&&i(`N8N: ${f.n8nResponse.message}`,"info")):f.mode==="github"?(i("Committed patch directly to GitHub Repository! \u{1F680}","success"),i(`Commit SHA: ${f.sha||"N/A"}`,"comment")):i("Patch successfully written to local disk! \u{1FA7A}","success"),await this.delay(600),i("Triggering Vercel Deploy Hook...","info"),await this.delay(400),i("Production rebuild triggered successfully! \u26A1","success"),i("Deployment is building in the background.","success"),i("Auto-Heal hot-patch complete! Site is recovered. \u{1F389}","success"),a&&(a.textContent="Hot-patch successfully applied!"),this.showToast("\u{1F680} Code Pushed to GitHub! Vercel is building...","success"),t){t.disabled=!1,t.classList.remove("disabled"),t.style.background="#10b981",t.style.borderColor="#10b981",t.style.color="#fff",r&&(r.style.display="none"),d&&(d.textContent="RELOAD PAGE TO VERIFY \u{1F504}");let k=document.getElementById("ah-ignore-btn");k&&(k.style.display="none"),t.onclick=()=>{window.location.reload()}}}else i(`\u274C Push Failed: ${f.error}`,"error"),this.showToast(`\u274C Push Failed: ${f.error}`,"warning"),a&&(a.textContent="Push failed."),t.disabled=!1,t.classList.remove("disabled"),r&&(r.style.display="none"),d&&(d.textContent="RETRY LIVE PATCH \u{1FA7A}")}catch{i("\u274C Network error communicating with Master Server","error"),this.showToast("\u274C Network error communicating with Master Server","warning"),a&&(a.textContent="Network error."),t.disabled=!1,t.classList.remove("disabled"),r&&(r.style.display="none"),d&&(d.textContent="RETRY LIVE PATCH \u{1FA7A}")}this.currentErrors=this.currentErrors.filter(u=>u.id!==e.id),this.updateBadgeCount()}}}else if(i(`AI agent failed: ${g||"Could not determine a safe patch."}`,"error"),a&&(a.textContent="Healing failed. Manual debug required."),t){t.disabled=!1,t.classList.remove("disabled");let r=document.getElementById("ah-btn-loader");r&&(r.style.display="none");let d=document.getElementById("ah-btn-text");d&&(d.textContent="Unable to heal")}}renderDiff(e){return e.split(`
-`).map(s=>{let a="normal";return s.startsWith("+")?a="add":s.startsWith("-")&&(a="delete"),`<div class="ah-diff-line ${a}">${this.escapeHTML(s)}</div>`}).join("")}showToast(e,t="success"){let s=document.createElement("div");s.className=`ah-toast ${t}`,s.innerHTML=`
-      <span class="ah-toast-icon">${t==="success"?"\u26A1":"\u26A0\uFE0F"}</span>
+
+      <div class="ah-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top:16px; margin-top:16px;">
+        <div class="ah-section-title">\u{1F4E6} Git & Deployment Settings</div>
+        
+        <div class="ah-form-group">
+          <label class="ah-label">GitHub Repository (owner/repo)</label>
+          <input type="text" id="ah-github-repo-input" class="ah-feature-input" style="height:36px;" placeholder="e.g. Octocat/Hello-World" />
+        </div>
+
+        <div class="ah-form-group">
+          <label class="ah-label">GitHub Personal Access Token (PAT)</label>
+          <input type="password" id="ah-github-token-input" class="ah-feature-input" style="height:36px; font-family:monospace;" placeholder="ghp_..." />
+        </div>
+
+        <div class="ah-form-group">
+          <label class="ah-label">Vercel Deploy Hook URL</label>
+          <input type="text" id="ah-vercel-hook-input" class="ah-feature-input" style="height:36px;" placeholder="https://api.vercel.com/v1/integrations/deploy/..." />
+        </div>
+
+        <div class="ah-form-group">
+          <label class="ah-label">N8N Cloud Bridge Webhook URL (Optional)</label>
+          <input type="text" id="ah-n8n-webhook-input" class="ah-feature-input" style="height:36px;" placeholder="https://..." />
+        </div>
+      </div>
+    `;let t=document.getElementById("ah-provider-select"),s=document.getElementById("ah-settings-gemini-section"),a=document.getElementById("ah-settings-groq-section"),l=document.getElementById("ah-settings-ollama-section"),r=h=>{s.style.display=h==="gemini"?"block":"none",a.style.display=h==="groq"?"block":"none",l.style.display=h==="ollama"?"block":"none"};t.addEventListener("change",h=>{r(h.target.value)});let i=document.getElementById("ah-autonomous-toggle");i&&(i.checked=localStorage.getItem("autoheal_autonomous")==="true");let n=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",p=window.AUTOHEAL_SITE_ID||window.location.host;try{let o=(await(await fetch(`${n}/api/settings`,{headers:{"x-site-id":p}})).json()).settings||{};o.modelProvider?(t.value=o.modelProvider,r(o.modelProvider)):r("gemini"),o.geminiKey&&(document.getElementById("ah-gemini-key-input").value=o.geminiKey),o.groqKey&&(document.getElementById("ah-groq-key-input").value=o.groqKey),o.ollamaUrl&&(document.getElementById("ah-ollama-url-input").value=o.ollamaUrl),o.ollamaModel&&(document.getElementById("ah-ollama-model-input").value=o.ollamaModel),o.githubRepo&&(document.getElementById("ah-github-repo-input").value=o.githubRepo),o.githubToken&&(document.getElementById("ah-github-token-input").value=o.githubToken),o.vercelDeployHook&&(document.getElementById("ah-vercel-hook-input").value=o.vercelDeployHook),o.n8nWebhook&&(document.getElementById("ah-n8n-webhook-input").value=o.n8nWebhook)}catch(h){console.warn("AutoHeal: Could not fetch settings",h),r("gemini")}let c=async()=>{let h=document.getElementById("ah-ollama-detector-banner");if(h)try{let d=new AbortController,o=setTimeout(()=>d.abort(),1200),g=await fetch("http://localhost:11434/api/tags",{signal:d.signal});clearTimeout(o),g.ok?(h.innerHTML=`
+            <div class="ah-banner green">
+              <div>
+                <div class="ah-banner-title">\u{1F7E2} Local Ollama Connected!</div>
+                <div class="ah-banner-desc">Your machine has unlimited free fixes ready on port 11434.</div>
+              </div>
+              <button class="ah-banner-btn" id="ah-use-local-btn">Use Local LLM</button>
+            </div>
+          `,document.getElementById("ah-use-local-btn")?.addEventListener("click",()=>{t.value="ollama",r("ollama"),document.getElementById("ah-ollama-url-input").value="http://localhost:11434",document.getElementById("ah-ollama-model-input").value="llama3";let u=document.getElementById("ah-save-settings-btn");u&&u.click()})):m(h)}catch{m(h)}},m=h=>{h.innerHTML=`
+        <div class="ah-banner grey">
+          <div>
+            <div class="ah-banner-title">\u26AA Local Ollama Offline</div>
+            <div class="ah-banner-desc">Start "ollama serve" on your laptop to unlock free, unlimited patches.</div>
+          </div>
+          <button class="ah-banner-btn" id="ah-detect-ollama-btn" style="background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.1);">Detect</button>
+        </div>
+      `,document.getElementById("ah-detect-ollama-btn")?.addEventListener("click",()=>{h.innerHTML='<div style="text-align:center; padding: 10px; font-size:12px; color:#888;">Scanning localhost:11434...</div>',setTimeout(c,500)})};c(),document.getElementById("ah-save-settings-btn")?.addEventListener("click",async()=>{let h=t.value,d=document.getElementById("ah-gemini-key-input")?.value.trim()||"",o=document.getElementById("ah-groq-key-input")?.value.trim()||"",g=document.getElementById("ah-ollama-url-input")?.value.trim()||"http://localhost:11434",u=document.getElementById("ah-ollama-model-input")?.value.trim()||"llama3",y=document.getElementById("ah-github-repo-input")?.value.trim()||"",E=document.getElementById("ah-github-token-input")?.value.trim()||"",f=document.getElementById("ah-vercel-hook-input")?.value.trim()||"",x=document.getElementById("ah-n8n-webhook-input")?.value.trim()||"";i&&localStorage.setItem("autoheal_autonomous",i.checked?"true":"false");let k=document.getElementById("ah-settings-status");k.textContent="Saving settings...";try{(await(await fetch(`${n}/api/settings`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":p},body:JSON.stringify({settings:{modelProvider:h,geminiKey:d,groqKey:o,ollamaUrl:g,ollamaModel:u,githubRepo:y,githubToken:E,vercelDeployHook:f,n8nWebhook:x}})})).json()).success?(k.textContent="Settings saved successfully! \u2705",this.showToast("\u2699\uFE0F Settings synchronized!","success"),setTimeout(()=>{k.textContent=""},3e3)):k.textContent="Error saving settings."}catch{k.textContent="Failed to connect to Master Server."}})}async runDiagnosticEngine(e,t){let s=document.getElementById("ah-diag-console"),a=document.getElementById("ah-footer-status"),l=document.getElementById("ah-scanner-box"),r=document.getElementById("ah-patch-box"),i=document.getElementById("ah-diff-box");if(!s)return;let n=(o,g="default")=>{let u=document.createElement("div");u.className=`ah-console-line ${g}`,u.textContent=`> ${o}`,s.appendChild(u),s.scrollTop=s.scrollHeight};await this.delay(1e3),n("Analyzing stack trace patterns...","info"),a&&(a.textContent="Analyzing source-code stack trace..."),await this.delay(1200),n("Extracting code context around error location...","info"),await this.delay(1e3),n("Consulting AI LLM healing patterns...","comment"),a&&(a.textContent="Generating surgical repair code...");let p=!1,c="",m="",v="",h=e.source||"sandbox",d=[];if(this.onHealHandler)try{let o=await this.onHealHandler(e);p=o.success,c=o.diffCode,m=o.explanation||"",v=o.healedFileContent||"",o.targetPath&&(h=o.targetPath),o.files&&(d=o.files)}catch{n("Failed to contact AI Healer Agent.","error")}if(await this.delay(800),p&&c){if(n("Surgical fix generated successfully!","success"),n("Ready to hot-patch runtime environment.","success"),a&&(a.textContent="Patch compiled successfully!"),l&&(l.style.display="none"),r&&(r.style.display="block"),i&&(i.innerHTML=this.renderDiff(c)),t){t.disabled=!1,t.classList.remove("disabled");let o=document.getElementById("ah-btn-loader");o&&(o.style.display="none");let g=document.getElementById("ah-btn-text");g&&(g.textContent="APPLY LIVE PATCH \u{1FA7A}"),t.onclick=async()=>{t.disabled=!0,t.classList.add("disabled"),o&&(o.style.display="inline-block"),g&&(g.textContent="Applying Patch..."),a&&(a.textContent="Executing hot-patch sequence..."),n("Initiating remote deployment pipeline...","info"),await this.delay(600),n("Packaging patch files...","info"),await this.delay(600),n("Contacting AutoHeal backend server...","info");try{let u=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",y=window.AUTOHEAL_SITE_ID||window.location.host,f=await(await fetch(`${u}/api/apply-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":y},body:JSON.stringify({files:d.length>0?d:void 0,content:v,file:h,prompt:e.message})})).json();if(f.success){if(n("Backend processed request successfully! \u2705","success"),await this.delay(600),f.mode==="n8n-cloud"?(n("Route: Forwarded to N8N Cloud Bridge \u{1F310}","success"),f.n8nResponse&&f.n8nResponse.message&&n(`N8N: ${f.n8nResponse.message}`,"info")):f.mode==="github"?(n("Committed patch directly to GitHub Repository! \u{1F680}","success"),n(`Commit SHA: ${f.sha||"N/A"}`,"comment")):n("Patch successfully written to local disk! \u{1FA7A}","success"),await this.delay(600),n("Triggering Vercel Deploy Hook...","info"),await this.delay(400),n("Production rebuild triggered successfully! \u26A1","success"),n("Deployment is building in the background.","success"),n("Auto-Heal hot-patch complete! Site is recovered. \u{1F389}","success"),a&&(a.textContent="Hot-patch successfully applied!"),this.showToast("\u{1F680} Code Pushed to GitHub! Vercel is building...","success"),t){t.disabled=!1,t.classList.remove("disabled"),t.style.background="#10b981",t.style.borderColor="#10b981",t.style.color="#fff",o&&(o.style.display="none"),g&&(g.textContent="RELOAD PAGE TO VERIFY \u{1F504}");let x=document.getElementById("ah-ignore-btn");x&&(x.style.display="none"),t.onclick=()=>{window.location.reload()}}}else n(`\u274C Push Failed: ${f.error}`,"error"),this.showToast(`\u274C Push Failed: ${f.error}`,"warning"),a&&(a.textContent="Push failed."),t.disabled=!1,t.classList.remove("disabled"),o&&(o.style.display="none"),g&&(g.textContent="RETRY LIVE PATCH \u{1FA7A}")}catch{n("\u274C Network error communicating with Master Server","error"),this.showToast("\u274C Network error communicating with Master Server","warning"),a&&(a.textContent="Network error."),t.disabled=!1,t.classList.remove("disabled"),o&&(o.style.display="none"),g&&(g.textContent="RETRY LIVE PATCH \u{1FA7A}")}this.currentErrors=this.currentErrors.filter(u=>u.id!==e.id),this.updateBadgeCount()}}}else if(n(`AI agent failed: ${m||"Could not determine a safe patch."}`,"error"),a&&(a.textContent="Healing failed. Manual debug required."),t){t.disabled=!1,t.classList.remove("disabled");let o=document.getElementById("ah-btn-loader");o&&(o.style.display="none");let g=document.getElementById("ah-btn-text");g&&(g.textContent="Unable to heal")}}renderDiff(e){return e.split(`
+`).map(s=>{let a="normal";return s.startsWith("+")?a="add":s.startsWith("-")&&(a="delete"),`<div class="ah-diff-line ${a}">${this.escapeHTML(s)}</div>`}).join("")}showToast(e,t="success"){let s=document.createElement("div");s.className=`ah-toast ${t}`;let a="\u26A1";t==="warning"?a="\u26A0\uFE0F":t==="info"?a="\u2139\uFE0F":t==="error"&&(a="\u274C"),s.innerHTML=`
+      <span class="ah-toast-icon">${a}</span>
       <span>${e}</span>
     `,document.body.appendChild(s),setTimeout(()=>s.classList.add("visible"),50),setTimeout(()=>{s.classList.remove("visible"),setTimeout(()=>s.remove(),400)},4e3)}closeDiagnosticModal(){this.container&&(this.container.style.display="none",document.body.classList.remove("ah-blur-active"))}escapeHTML(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}delay(e){return new Promise(t=>setTimeout(t,e))}injectStyles(){if(document.getElementById("autoheal-widget-styles"))return;let e=document.createElement("style");e.id="autoheal-widget-styles",e.textContent=`
       /* Font settings for premium console */
@@ -683,13 +776,13 @@ Self-Healing UI Diagnostic System
       .ah-toast-icon {
         font-size: 18px;
       }
-    `,document.head.appendChild(e)}},x=new H;var A=class{container=null;isConnected=!0;errorList=[];currentTerminalLogs=[];settings={n8nWebhook:"",vercelDeployHook:"",gitBranch:"main",modelProvider:"groq",geminiKey:"",groqKey:""};scores={polish:52,spacing:60,mobile:45,conversion:55};constructor(){window.addEventListener("__autoheal_telemetry_update__",(e=>{this.errorList=e.detail,this.render()}))}getMockErrors(){let e=Date.now();return[{id:"mock_crash_1",type:"crash",message:"TypeError: Cannot read properties of undefined (reading 'map') in SandboxView.tsx:67",stack:`TypeError: Cannot read properties of undefined (reading 'map')
+    `,document.head.appendChild(e)}},w=new O;var M=class{container=null;isConnected=!0;errorList=[];currentTerminalLogs=[];localOllamaDetected=!1;settings={n8nWebhook:"",vercelDeployHook:"",gitBranch:"main",modelProvider:"groq",geminiKey:"",groqKey:"",ollamaUrl:"http://localhost:11434",ollamaModel:"llama3"};scores={polish:52,spacing:60,mobile:45,conversion:55};constructor(){window.addEventListener("__autoheal_telemetry_update__",(e=>{this.errorList=e.detail,this.render()}))}getMockErrors(){let e=Date.now();return[{id:"mock_crash_1",type:"crash",message:"TypeError: Cannot read properties of undefined (reading 'map') in SandboxView.tsx:67",stack:`TypeError: Cannot read properties of undefined (reading 'map')
     at SandboxView (file:///c:/auomation/playground/src/components/SandboxView.tsx:67:32)
     at renderWithHooks (file:///c:/auomation/node_modules/react-dom/cjs/react-dom.development.js:15486:18)`,source:"file:///c:/auomation/playground/src/components/SandboxView.tsx",line:67,column:32,timestamp:new Date(e-300*1e3).toISOString()},{id:"mock_promise_1",type:"promise",message:"Unhandled Promise Rejection: Error: Network Error - Failed to fetch endpoint 'https://api.broken-endpoint.dev/data/v1/telemetry'",stack:`Error: Network Error
     at fetchTelemetryData (file:///c:/auomation/playground/src/utils/api.ts:14:11)
     at async loadDashboardData (file:///c:/auomation/playground/src/App.tsx:92:24)`,source:"file:///c:/auomation/playground/src/utils/api.ts",line:14,column:11,timestamp:new Date(e-900*1e3).toISOString()},{id:"mock_asset_1",type:"asset",message:"Failed to load resource: net::ERR_FILE_NOT_FOUND (broken-cyber-chip-image.jpg)",source:"file:///c:/auomation/playground/src/assets/broken-cyber-chip-image.jpg",timestamp:new Date(e-1920*1e3).toISOString()},{id:"mock_console_1",type:"console_error",message:'[React] Mismatched Hydration Warning: expected text node containing "AutoHeal // Evolution Deck" but found HTML tag <div>',source:"file:///c:/auomation/node_modules/react-dom/cjs/react-dom.development.js",timestamp:new Date(e-2880*1e3).toISOString()}]}async printDiffToTerminal(e){let t=e.split(`
-`);for(let s of t){let a="default";s.startsWith("+")&&!s.startsWith("+++")?a="success":s.startsWith("-")&&!s.startsWith("---")?a="error":s.startsWith("@@")||s.startsWith("Index:")||s.startsWith("===")?a="comment":(s.startsWith("---")||s.startsWith("+++"))&&(a="info"),this.addTerminalLog(s,a),await this.delay(120)}}async initData(){try{let t={"x-site-id":window.location.host};this.addTerminalLog("Connecting to live patcher backend database...","comment");let[s,a,o]=await Promise.all([fetch("http://localhost:3001/api/telemetry",{headers:t}),fetch("http://localhost:3001/api/settings",{headers:t}),fetch("http://localhost:3001/api/scores",{headers:t})]),[n,l,i]=await Promise.all([s.json(),a.json(),o.json()]);n.success&&n.errors&&(this.errorList=n.errors,window.__autoheal_errors_cache__=this.errorList),l.success&&l.settings&&(this.settings={...this.settings,...l.settings}),i.success&&i.scores&&(this.scores={...this.scores,...i.scores}),this.addTerminalLog("Successfully synced workspace state with live multi-tenant backend.","success"),this.render()}catch(e){this.addTerminalLog(`Backend offline: ${e.message}. Operating in Dev-Simulation Mode.`,"info");let t=window.__autoheal_errors_cache__||[];t.length===0?(this.errorList=this.getMockErrors(),window.__autoheal_errors_cache__=this.errorList):this.errorList=t,this.render()}}mount(e){let t=typeof e=="string"?document.querySelector(e):e;if(!t){console.error("__autoheal_internal__ Dashboard mount target not found:",e);return}this.container=t,this.injectStyles(),this.addTerminalLog("AutoHeal Evolution Dashboard mounted successfully."),this.addTerminalLog("Telemetry connection secure. Monitoring live traffic..."),this.initData()}addTerminalLog(e,t="default"){let s=new Date().toLocaleTimeString(),a="> ";t==="success"?a="\u2713 ":t==="error"?a="\u2717 ":t==="info"&&(a="\u2139 "),this.currentTerminalLogs.push(`[${s}] ${a}${e}`),this.currentTerminalLogs.length>50&&this.currentTerminalLogs.shift();let o=document.getElementById("ah-dash-terminal");if(o){let n=document.createElement("div");n.className=`ah-term-line ${t}`,n.textContent=`[${s}] ${a}${e}`,o.appendChild(n),o.scrollTop=o.scrollHeight}}async saveSettings(e,t,s,a,o,n){let l={n8nWebhook:e.trim(),vercelDeployHook:t.trim(),gitBranch:s.trim()};a&&(l.modelProvider=a),o!==void 0&&(l.geminiKey=o.trim()),n!==void 0&&(l.groqKey=n.trim()),this.settings={...this.settings,...l};try{let c=await(await fetch("http://localhost:3001/api/settings",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({settings:l})})).json();if(c.success&&c.settings)this.settings={...this.settings,...c.settings},this.addTerminalLog("Cloud Git-Bridge settings saved to remote database.","success");else throw new Error("Failed to save settings: server did not return success.")}catch(i){this.addTerminalLog(`Failed to save settings to backend: ${i.message}. Saved locally in memory.`,"error")}this.render()}async dispatchWebhook(e){let t=this.settings.n8nWebhook||"",s=this.settings.vercelDeployHook||"",a=this.settings.gitBranch||"main";if(this.addTerminalLog(`Initiating Cloud Git-Bridge dispatch for file: ${e.file}...`,"info"),await this.delay(1e3),this.addTerminalLog(`Resolving payload changes (diff size: ${e.diffCode.split(`
-`).length} lines).`,"default"),await this.delay(800),!t)return this.addTerminalLog("FAILED: N8N Webhook Endpoint not configured! operating in Dev-Simulation.","error"),this.addTerminalLog("[SIMULATION] Dispatching Webhook payload to mock receiver...","info"),await this.delay(1200),this.addTerminalLog('[SIMULATION] N8N Workflow Triggered: "selfheal-patch-handler"',"success"),await this.delay(1e3),this.addTerminalLog(`[SIMULATION] Git Commit pushed to branch "${a}" successfully.`,"success"),await this.delay(1200),this.addTerminalLog("[SIMULATION] Vercel Deploy Hook triggered! Rebuilding live site...","info"),await this.delay(1500),this.addTerminalLog("[SIMULATION] Deployed version completed. Evolution goes Live!","success"),{success:!0,simulated:!0};try{this.addTerminalLog(`Dispatched POST webhook request to: ${t}`,"comment");let o=await fetch(t,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...e,vercelDeployHook:s,gitBranch:a,timestamp:new Date().toISOString()})});if(!o.ok)throw new Error(`N8N Endpoint returned status code: ${o.status}`);return this.addTerminalLog("N8N Webhook response successful!","success"),s&&this.addTerminalLog("Vercel live deployment triggered concurrently.","info"),{success:!0}}catch(o){return this.addTerminalLog(`Webhook dispatch error: ${o.message}`,"error"),{success:!1,error:o.message}}}async triggerSimulatedHeal(e){this.addTerminalLog(`Selected telemetry crash report: [${e.type.toUpperCase()}]`,"info"),this.addTerminalLog("Requesting repair suggestion from client-side AI agent...","comment");let t=this.settings.modelProvider||"gemini",s=t==="gemini"?this.settings.geminiKey:this.settings.groqKey,a=e.id.startsWith("mock_");a?this.addTerminalLog(`Mock exception recognized: [${e.id}]. Injecting static high-fidelity repair...`,"info"):s?this.addTerminalLog(`Active LPU provider: [${t.toUpperCase()}] running diagnostics...`,"info"):this.addTerminalLog("No active API Key found in settings! Using fallback simulation module.","comment"),await this.delay(1200);let o=!1,n="",l="playground/src/components/SandboxView.tsx";if(a)o=!0,e.id==="mock_crash_1"?(l="playground/src/components/SandboxView.tsx",n=`Index: playground/src/components/SandboxView.tsx
+`);for(let s of t){let a="default";s.startsWith("+")&&!s.startsWith("+++")?a="success":s.startsWith("-")&&!s.startsWith("---")?a="error":s.startsWith("@@")||s.startsWith("Index:")||s.startsWith("===")?a="comment":(s.startsWith("---")||s.startsWith("+++"))&&(a="info"),this.addTerminalLog(s,a),await this.delay(120)}}async checkLocalOllama(){try{let e=new AbortController,t=setTimeout(()=>e.abort(),1e3),s=await fetch("http://localhost:11434/api/tags",{signal:e.signal});return clearTimeout(t),s.ok}catch{return!1}}async initData(){this.checkLocalOllama().then(e=>{e&&(this.localOllamaDetected=!0,this.addTerminalLog("Local Ollama server detected automatically! \u{1F7E2} Unlimited free patch generation available.","success"),this.render())});try{let t={"x-site-id":window.location.host};this.addTerminalLog("Connecting to live patcher backend database...","comment");let[s,a,l]=await Promise.all([fetch("http://localhost:3001/api/telemetry",{headers:t}),fetch("http://localhost:3001/api/settings",{headers:t}),fetch("http://localhost:3001/api/scores",{headers:t})]),[r,i,n]=await Promise.all([s.json(),a.json(),l.json()]);r.success&&r.errors&&(this.errorList=r.errors,window.__autoheal_errors_cache__=this.errorList),i.success&&i.settings&&(this.settings={...this.settings,...i.settings}),n.success&&n.scores&&(this.scores={...this.scores,...n.scores}),this.addTerminalLog("Successfully synced workspace state with live multi-tenant backend.","success"),this.render()}catch(e){this.addTerminalLog(`Backend offline: ${e.message}. Operating in Dev-Simulation Mode.`,"info");let t=window.__autoheal_errors_cache__||[];t.length===0?(this.errorList=this.getMockErrors(),window.__autoheal_errors_cache__=this.errorList):this.errorList=t,this.render()}}mount(e){let t=typeof e=="string"?document.querySelector(e):e;if(!t){console.error("__autoheal_internal__ Dashboard mount target not found:",e);return}this.container=t,this.injectStyles(),this.addTerminalLog("AutoHeal Evolution Dashboard mounted successfully."),this.addTerminalLog("Telemetry connection secure. Monitoring live traffic..."),this.initData()}addTerminalLog(e,t="default"){let s=new Date().toLocaleTimeString(),a="> ";t==="success"?a="\u2713 ":t==="error"?a="\u2717 ":t==="info"&&(a="\u2139 "),this.currentTerminalLogs.push(`[${s}] ${a}${e}`),this.currentTerminalLogs.length>50&&this.currentTerminalLogs.shift();let l=document.getElementById("ah-dash-terminal");if(l){let r=document.createElement("div");r.className=`ah-term-line ${t}`,r.textContent=`[${s}] ${a}${e}`,l.appendChild(r),l.scrollTop=l.scrollHeight}}async saveSettings(e,t,s,a,l,r,i,n){let p={n8nWebhook:e.trim(),vercelDeployHook:t.trim(),gitBranch:s.trim()};a&&(p.modelProvider=a),l!==void 0&&(p.geminiKey=l.trim()),r!==void 0&&(p.groqKey=r.trim()),i!==void 0&&(p.ollamaUrl=i.trim()),n!==void 0&&(p.ollamaModel=n.trim()),this.settings={...this.settings,...p};try{let m=await(await fetch("http://localhost:3001/api/settings",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({settings:p})})).json();if(m.success&&m.settings)this.settings={...this.settings,...m.settings},this.addTerminalLog("Cloud Git-Bridge settings saved to remote database.","success");else throw new Error("Failed to save settings: server did not return success.")}catch(c){this.addTerminalLog(`Failed to save settings to backend: ${c.message}. Saved locally in memory.`,"error")}this.render()}async dispatchWebhook(e){let t=this.settings.n8nWebhook||"",s=this.settings.vercelDeployHook||"",a=this.settings.gitBranch||"main";if(this.addTerminalLog(`Initiating Cloud Git-Bridge dispatch for file: ${e.file}...`,"info"),await this.delay(1e3),this.addTerminalLog(`Resolving payload changes (diff size: ${e.diffCode.split(`
+`).length} lines).`,"default"),await this.delay(800),!t)return this.addTerminalLog("FAILED: N8N Webhook Endpoint not configured! operating in Dev-Simulation.","error"),this.addTerminalLog("[SIMULATION] Dispatching Webhook payload to mock receiver...","info"),await this.delay(1200),this.addTerminalLog('[SIMULATION] N8N Workflow Triggered: "selfheal-patch-handler"',"success"),await this.delay(1e3),this.addTerminalLog(`[SIMULATION] Git Commit pushed to branch "${a}" successfully.`,"success"),await this.delay(1200),this.addTerminalLog("[SIMULATION] Vercel Deploy Hook triggered! Rebuilding live site...","info"),await this.delay(1500),this.addTerminalLog("[SIMULATION] Deployed version completed. Evolution goes Live!","success"),{success:!0,simulated:!0};try{this.addTerminalLog(`Dispatched POST webhook request to: ${t}`,"comment");let l=await fetch(t,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...e,vercelDeployHook:s,gitBranch:a,timestamp:new Date().toISOString()})});if(!l.ok)throw new Error(`N8N Endpoint returned status code: ${l.status}`);return this.addTerminalLog("N8N Webhook response successful!","success"),s&&this.addTerminalLog("Vercel live deployment triggered concurrently.","info"),{success:!0}}catch(l){return this.addTerminalLog(`Webhook dispatch error: ${l.message}`,"error"),{success:!1,error:l.message}}}async triggerSimulatedHeal(e){this.addTerminalLog(`Selected telemetry crash report: [${e.type.toUpperCase()}]`,"info"),this.addTerminalLog("Requesting repair suggestion from client-side AI agent...","comment");let t=this.settings.modelProvider||"gemini",s=t==="gemini"?this.settings.geminiKey:this.settings.groqKey,a=e.id.startsWith("mock_");a?this.addTerminalLog(`Mock exception recognized: [${e.id}]. Injecting static high-fidelity repair...`,"info"):s?this.addTerminalLog(`Active LPU provider: [${t.toUpperCase()}] running diagnostics...`,"info"):this.addTerminalLog("No active API Key found in settings! Using fallback simulation module.","comment"),await this.delay(1200);let l=!1,r="",i="playground/src/components/SandboxView.tsx";if(a)l=!0,e.id==="mock_crash_1"?(i="playground/src/components/SandboxView.tsx",r=`Index: playground/src/components/SandboxView.tsx
 ===================================================================
 --- playground/src/components/SandboxView.tsx
 +++ playground/src/components/SandboxView.tsx
@@ -697,7 +790,7 @@ Self-Healing UI Diagnostic System
 -  const items = catalogData.items;
 -  return items.map(item => <ItemCard key={item.id} data={item} />);
 +  const items = catalogData?.items || [];
-+  return items.map(item => <ItemCard key={item.id} data={item} />);`):e.id==="mock_promise_1"?(l="playground/src/utils/api.ts",n=`Index: playground/src/utils/api.ts
++  return items.map(item => <ItemCard key={item.id} data={item} />);`):e.id==="mock_promise_1"?(i="playground/src/utils/api.ts",r=`Index: playground/src/utils/api.ts
 ===================================================================
 --- playground/src/utils/api.ts
 +++ playground/src/utils/api.ts
@@ -711,7 +804,7 @@ Self-Healing UI Diagnostic System
 +  } catch (e) {
 +    console.warn("Telemetry fallback enabled:", e);
 +  }
-+  return data;`):e.id==="mock_asset_1"?(l="playground/src/components/SandboxView.tsx",n=`Index: playground/src/components/SandboxView.tsx
++  return data;`):e.id==="mock_asset_1"?(i="playground/src/components/SandboxView.tsx",r=`Index: playground/src/components/SandboxView.tsx
 ===================================================================
 --- playground/src/components/SandboxView.tsx
 +++ playground/src/components/SandboxView.tsx
@@ -721,17 +814,17 @@ Self-Healing UI Diagnostic System
 +    src="/assets/broken-cyber-chip-image.jpg" 
 +    onError={(e) => { e.currentTarget.src = "/assets/fallback-chip.png"; }} 
 +    alt="Cyber Chip" 
-+  />`):e.id==="mock_console_1"&&(l="packages/autoheal-sdk/src/dashboard.ts",n=`Index: packages/autoheal-sdk/src/dashboard.ts
++  />`):e.id==="mock_console_1"&&(i="packages/autoheal-sdk/src/dashboard.ts",r=`Index: packages/autoheal-sdk/src/dashboard.ts
 ===================================================================
 --- packages/autoheal-sdk/src/dashboard.ts
 +++ packages/autoheal-sdk/src/dashboard.ts
 @@ -298,3 +298,3 @@
 -              <div class="ah-brand-title">AUTOHEAL // EVOLUTION DECK</div>
--+              <div id="ah-brand-title-static" class="ah-brand-title">AUTOHEAL // EVOLUTION DECK</div>`);else if(window.AutoHeal&&window.AutoHeal.config&&window.AutoHeal.config.onHealRequest)try{let i=await window.AutoHeal.config.onHealRequest(e);o=i.success,n=i.diffCode}catch(i){this.addTerminalLog(`AI Agent pipeline crashed: ${i.message}`,"error")}else o=!0,n=`Index: ${e.source||"unknown-file.tsx"}
+-+              <div id="ah-brand-title-static" class="ah-brand-title">AUTOHEAL // EVOLUTION DECK</div>`);else if(window.AutoHeal&&window.AutoHeal.config&&window.AutoHeal.config.onHealRequest)try{let n=await window.AutoHeal.config.onHealRequest(e);l=n.success,r=n.diffCode}catch(n){this.addTerminalLog(`AI Agent pipeline crashed: ${n.message}`,"error")}else l=!0,r=`Index: ${e.source||"unknown-file.tsx"}
 +++ ${e.source||"unknown-file.tsx"}
 @@ -1,1 +1,2 @@
 - /* error */
-+ /* simulated AI cloud repair applied successfully */`;if(o&&n){if(this.addTerminalLog("AI Repair patch compiled successfully!","success"),this.addTerminalLog("Printing visual git patch diff...","info"),await this.printDiffToTerminal(n),(await this.dispatchWebhook({file:l,content:"/* Completed autonomous code replacement script context */",diffCode:n,explanation:`Surgically repaired exception: ${e.message}`,type:e.type})).success){try{let p=await(await fetch("http://localhost:3001/api/telemetry/clear",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({id:e.id})})).json();p.success&&p.errors?(this.errorList=p.errors,window.__autoheal_errors_cache__=this.errorList):(this.errorList=this.errorList.filter(g=>g.id!==e.id),window.__autoheal_errors_cache__=this.errorList)}catch{this.errorList=this.errorList.filter(p=>p.id!==e.id),window.__autoheal_errors_cache__=this.errorList}window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.errorList})),this.render()}}else this.addTerminalLog("Repair algorithm aborted: AI agent could not generate safe replacement boundaries.","error")}async triggerSimulatedEvolution(e){this.addTerminalLog(`Starting visual layout evolution: [${e.toUpperCase()}]`,"info"),this.addTerminalLog("Studying DOM node alignment and mobile styling parameters...","comment"),await this.delay(1200),this.addTerminalLog("Generating updated Glassmorphic token stylesheet...","info");let t="",s="",a={...this.scores};if(e==="animation"?(t=`+ .sandbox-card {
++ /* simulated AI cloud repair applied successfully */`;if(l&&r){if(this.addTerminalLog("AI Repair patch compiled successfully!","success"),this.addTerminalLog("Printing visual git patch diff...","info"),await this.printDiffToTerminal(r),(await this.dispatchWebhook({file:i,content:"/* Completed autonomous code replacement script context */",diffCode:r,explanation:`Surgically repaired exception: ${e.message}`,type:e.type})).success){try{let c=await(await fetch("http://localhost:3001/api/telemetry/clear",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({id:e.id})})).json();c.success&&c.errors?(this.errorList=c.errors,window.__autoheal_errors_cache__=this.errorList):(this.errorList=this.errorList.filter(m=>m.id!==e.id),window.__autoheal_errors_cache__=this.errorList)}catch{this.errorList=this.errorList.filter(c=>c.id!==e.id),window.__autoheal_errors_cache__=this.errorList}window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.errorList})),this.render()}}else this.addTerminalLog("Repair algorithm aborted: AI agent could not generate safe replacement boundaries.","error")}async triggerSimulatedEvolution(e){this.addTerminalLog(`Starting visual layout evolution: [${e.toUpperCase()}]`,"info"),this.addTerminalLog("Studying DOM node alignment and mobile styling parameters...","comment"),await this.delay(1200),this.addTerminalLog("Generating updated Glassmorphic token stylesheet...","info");let t="",s="",a={...this.scores};if(e==="animation"?(t=`+ .sandbox-card {
 +   animation: neon-glow-pulse-anim 5s infinite alternate;
 + }`,s="/* Injected animation keyframes */",a.polish=95):e==="spacing"?(t=`+ .sandbox-card {
 +   backdrop-filter: blur(20px);
@@ -740,7 +833,7 @@ Self-Healing UI Diagnostic System
 +   .catalog-grid { grid-template-columns: 1fr; }
 + }`,s="/* Injected responsive overrides */",a.mobile=94):e==="conversion"&&(t=`+ .btn-buy {
 +   background: linear-gradient(135deg, var(--neon-emerald), #059669);
-+ }`,s="/* Injected CTA conversion elements */",a.conversion=97),this.scores=a,await this.delay(1e3),this.addTerminalLog("Visual upgrade stylesheet compiled successfully!","success"),(await this.dispatchWebhook({file:"playground/src/index.css",content:s,diffCode:t,explanation:`Evolved target design hook: ${e}`,type:"css"})).success){this.addTerminalLog("Evolved scoring variables completed! Redeployment is active.","success");try{let c=await(await fetch("http://localhost:3001/api/scores",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({scores:a})})).json();c.success&&c.scores&&(this.scores=c.scores)}catch(i){this.addTerminalLog(`Failed to write evolved scores to backend DB: ${i.message}`,"error")}let n=`autoheal-evolution-style-${e}`,l=document.getElementById(n);l||(l=document.createElement("style"),l.id=n,document.head.appendChild(l)),e==="animation"?l.textContent=`
++ }`,s="/* Injected CTA conversion elements */",a.conversion=97),this.scores=a,await this.delay(1e3),this.addTerminalLog("Visual upgrade stylesheet compiled successfully!","success"),(await this.dispatchWebhook({file:"playground/src/index.css",content:s,diffCode:t,explanation:`Evolved target design hook: ${e}`,type:"css"})).success){this.addTerminalLog("Evolved scoring variables completed! Redeployment is active.","success");try{let p=await(await fetch("http://localhost:3001/api/scores",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({scores:a})})).json();p.success&&p.scores&&(this.scores=p.scores)}catch(n){this.addTerminalLog(`Failed to write evolved scores to backend DB: ${n.message}`,"error")}let r=`autoheal-evolution-style-${e}`,i=document.getElementById(r);i||(i=document.createElement("style"),i.id=r,document.head.appendChild(i)),e==="animation"?i.textContent=`
           @keyframes neon-glow-pulse-anim-dash {
             0% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.25); }
             50% { box-shadow: 0 0 25px rgba(189, 0, 255, 0.45); }
@@ -749,22 +842,22 @@ Self-Healing UI Diagnostic System
           .sandbox-card {
             animation: neon-glow-pulse-anim-dash 5s infinite alternate !important;
           }
-        `:e==="spacing"?l.textContent=`
+        `:e==="spacing"?i.textContent=`
           .sandbox-card {
             background: rgba(10, 15, 26, 0.65) !important;
             backdrop-filter: blur(20px) !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
           }
-        `:e==="mobile"?l.textContent=`
+        `:e==="mobile"?i.textContent=`
           @media (max-width: 768px) {
             .catalog-grid { grid-template-columns: 1fr !important; }
           }
-        `:e==="conversion"&&(l.textContent=`
+        `:e==="conversion"&&(i.textContent=`
           .btn-buy {
             background: linear-gradient(135deg, #00ff66 0%, #059669 100%) !important;
             box-shadow: 0 0 15px rgba(0, 255, 102, 0.4) !important;
           }
-        `),this.render()}}render(){if(!this.container)return;let e=this.settings.n8nWebhook||"",t=this.settings.vercelDeployHook||"",s=this.settings.gitBranch||"main",a=this.scores.polish,o=this.scores.spacing,n=this.scores.mobile,l=this.scores.conversion;this.container.innerHTML=`
+        `),this.render()}}render(){if(!this.container)return;let e=this.settings.n8nWebhook||"",t=this.settings.vercelDeployHook||"",s=this.scores.polish,a=this.scores.spacing,l=this.scores.mobile,r=this.scores.conversion;this.container.innerHTML=`
       <div class="ah-dash-wrapper">
         
         <!-- Dashboard Navigation Header -->
@@ -805,16 +898,16 @@ Self-Healing UI Diagnostic System
                   </div>
                 `:`
                   <div class="ah-error-logs-list">
-                    ${this.errorList.map(r=>`
+                    ${this.errorList.map(d=>`
                       <div class="ah-log-item-card">
                         <div class="ah-log-item-header">
-                          <span class="ah-log-badge ${r.type==="crash"?"red":"yellow"}">${r.type.toUpperCase()}</span>
-                          <span class="ah-log-time">${new Date(r.timestamp).toLocaleTimeString()}</span>
+                          <span class="ah-log-badge ${d.type==="crash"?"red":"yellow"}">${d.type.toUpperCase()}</span>
+                          <span class="ah-log-time">${new Date(d.timestamp).toLocaleTimeString()}</span>
                         </div>
-                        <div class="ah-log-message">${r.message}</div>
-                        ${r.source?`<div class="ah-log-src">Source: <code>${r.source.substring(r.source.lastIndexOf("/")+1)}</code></div>`:""}
+                        <div class="ah-log-message">${d.message}</div>
+                        ${d.source?`<div class="ah-log-src">Source: <code>${d.source.substring(d.source.lastIndexOf("/")+1)}</code></div>`:""}
                         <div class="ah-log-footer">
-                          <button class="ah-dash-btn primary small heal-trigger-btn" data-id="${r.id}">\u{1FA7A} AI Cloud Repair</button>
+                          <button class="ah-dash-btn primary small heal-trigger-btn" data-id="${d.id}">\u{1FA7A} AI Cloud Repair</button>
                         </div>
                       </div>
                     `).join("")}
@@ -830,7 +923,7 @@ Self-Healing UI Diagnostic System
                 <span>Autonomous Git-Bridge Console</span>
               </div>
               <div class="ah-panel-body dark-terminal scrollable" id="ah-dash-terminal">
-                ${this.currentTerminalLogs.map(r=>{let d="";return r.includes("\u2713")||r.includes("Live")?d="success":r.includes("\u2717")||r.includes("FAILED")?d="error":r.includes("\u2139")||r.includes("Initiating")?d="info":r.includes("comment")&&(d="comment"),`<div class="ah-term-line ${d}">${r}</div>`}).join("")}
+                ${this.currentTerminalLogs.map(d=>{let o="";return d.includes("\u2713")||d.includes("Live")?o="success":d.includes("\u2717")||d.includes("FAILED")?o="error":d.includes("\u2139")||d.includes("Initiating")?o="info":d.includes("comment")&&(o="comment"),`<div class="ah-term-line ${o}">${d}</div>`}).join("")}
               </div>
             </div>
 
@@ -851,13 +944,13 @@ Self-Healing UI Diagnostic System
                   <div class="ah-gauge-row">
                     <div class="ah-gauge-info">
                       <span class="ah-gauge-name">\u26A1 MOTION & POLISH</span>
-                      <span class="ah-gauge-score ${a>=80?"green":"yellow"}">${a}%</span>
+                      <span class="ah-gauge-score ${s>=80?"green":"yellow"}">${s}%</span>
                     </div>
                     <div class="ah-progress-track">
-                      <div class="ah-progress-fill yellow" style="width: ${a}%;"></div>
+                      <div class="ah-progress-fill yellow" style="width: ${s}%;"></div>
                     </div>
                     <div class="ah-gauge-footer">
-                      <span class="ah-gauge-desc">${a>=80?"Premium micro-animations active":"Static stylesheets detected"}</span>
+                      <span class="ah-gauge-desc">${s>=80?"Premium micro-animations active":"Static stylesheets detected"}</span>
                       <button class="ah-dash-btn small purple evolve-trigger-btn" data-gauge="animation">EVOLVE</button>
                     </div>
                   </div>
@@ -866,13 +959,13 @@ Self-Healing UI Diagnostic System
                   <div class="ah-gauge-row">
                     <div class="ah-gauge-info">
                       <span class="ah-gauge-name">\u{1F48E} DESIGN & SPACING</span>
-                      <span class="ah-gauge-score ${o>=80?"green":"yellow"}">${o}%</span>
+                      <span class="ah-gauge-score ${a>=80?"green":"yellow"}">${a}%</span>
                     </div>
                     <div class="ah-progress-track">
-                      <div class="ah-progress-fill cyan" style="width: ${o}%;"></div>
+                      <div class="ah-progress-fill cyan" style="width: ${a}%;"></div>
                     </div>
                     <div class="ah-gauge-footer">
-                      <span class="ah-gauge-desc">${o>=80?"High-contrast Glassmorphism active":"Outdated layout card models loaded"}</span>
+                      <span class="ah-gauge-desc">${a>=80?"High-contrast Glassmorphism active":"Outdated layout card models loaded"}</span>
                       <button class="ah-dash-btn small purple evolve-trigger-btn" data-gauge="spacing">EVOLVE</button>
                     </div>
                   </div>
@@ -881,13 +974,13 @@ Self-Healing UI Diagnostic System
                   <div class="ah-gauge-row">
                     <div class="ah-gauge-info">
                       <span class="ah-gauge-name">\u{1F4F1} MOBILE RESPONSIVENESS</span>
-                      <span class="ah-gauge-score ${n>=80?"green":"yellow"}">${n}%</span>
+                      <span class="ah-gauge-score ${l>=80?"green":"yellow"}">${l}%</span>
                     </div>
                     <div class="ah-progress-track">
-                      <div class="ah-progress-fill purple" style="width: ${n}%;"></div>
+                      <div class="ah-progress-fill purple" style="width: ${l}%;"></div>
                     </div>
                     <div class="ah-gauge-footer">
-                      <span class="ah-gauge-desc">${n>=80?"Fluid grid scaling configured":"Static pixel widths warning"}</span>
+                      <span class="ah-gauge-desc">${l>=80?"Fluid grid scaling configured":"Static pixel widths warning"}</span>
                       <button class="ah-dash-btn small purple evolve-trigger-btn" data-gauge="mobile">EVOLVE</button>
                     </div>
                   </div>
@@ -896,13 +989,13 @@ Self-Healing UI Diagnostic System
                   <div class="ah-gauge-row">
                     <div class="ah-gauge-info">
                       <span class="ah-gauge-name">\u{1F3A8} HIGH-CONVERSION CTA</span>
-                      <span class="ah-gauge-score ${l>=80?"green":"yellow"}">${l}%</span>
+                      <span class="ah-gauge-score ${r>=80?"green":"yellow"}">${r}%</span>
                     </div>
                     <div class="ah-progress-track">
-                      <div class="ah-progress-fill emerald" style="width: ${l}%;"></div>
+                      <div class="ah-progress-fill emerald" style="width: ${r}%;"></div>
                     </div>
                     <div class="ah-gauge-footer">
-                      <span class="ah-gauge-desc">${l>=80?"Glowing CTA gradient borders loaded":"Low CTA layout visibility"}</span>
+                      <span class="ah-gauge-desc">${r>=80?"Glowing CTA gradient borders loaded":"Low CTA layout visibility"}</span>
                       <button class="ah-dash-btn small purple evolve-trigger-btn" data-gauge="conversion">EVOLVE</button>
                     </div>
                   </div>
@@ -929,23 +1022,53 @@ Self-Healing UI Diagnostic System
                   </div>
                   <div class="ah-input-group">
                     <label>Target Git Repository Branch</label>
-                    <input type="text" id="ah-git-branch-input" class="ah-text-input" placeholder="main" value="${s}" />
-                  </div>
-                  <div class="ah-input-group">
+                    <input type="text" id="ah-git-branch-input" class="ah-text-input" placehold                  <div class="ah-input-group">
                     <label>Autonomous AI Engine Provider</label>
                     <select id="ah-model-provider-input" class="ah-text-input">
                       <option value="gemini" ${this.settings.modelProvider==="gemini"?"selected":""}>Google Gemini</option>
                       <option value="groq" ${this.settings.modelProvider==="groq"?"selected":""}>Groq (Llama 3)</option>
+                      <option value="ollama" ${this.settings.modelProvider==="ollama"?"selected":""}>Ollama (Local LLM)</option>
                     </select>
                   </div>
-                  <div class="ah-input-group">
+                  <div class="ah-input-group" style="${this.settings.modelProvider==="gemini"?"":"display: none;"}">
                     <label>Google Gemini API Key</label>
                     <input type="password" id="ah-gemini-key-input" class="ah-text-input" placeholder="Enter Gemini API Key..." value="${this.settings.geminiKey||""}" />
                   </div>
-                  <div class="ah-input-group">
+                  <div class="ah-input-group" style="${this.settings.modelProvider==="groq"?"":"display: none;"}">
                     <label>Groq API Key</label>
                     <input type="password" id="ah-groq-key-input" class="ah-text-input" placeholder="Enter Groq API Key..." value="${this.settings.groqKey||""}" />
                   </div>
+                  <div class="ah-input-group" id="ah-ollama-url-group" style="${this.settings.modelProvider==="ollama"?"":"display: none;"}">
+                    <label>Ollama Server URL</label>
+                    <input type="text" id="ah-ollama-url-input" class="ah-text-input" placeholder="http://localhost:11434" value="${this.settings.ollamaUrl||"http://localhost:11434"}" />
+                  </div>
+                  <div class="ah-input-group" id="ah-ollama-model-group" style="${this.settings.modelProvider==="ollama"?"":"display: none;"}">
+                    <label>Ollama Model Name</label>
+                    <input type="text" id="ah-ollama-model-input" class="ah-text-input" placeholder="llama3" value="${this.settings.ollamaModel||"llama3"}" />
+                  </div>
+
+                  <div style="margin-top: 15px; margin-bottom: 15px;">
+                    ${this.localOllamaDetected?`
+                    <div class="ah-ollama-alert" style="background: rgba(0, 255, 102, 0.08); border: 1px solid var(--neon-emerald); border-radius: 6px; padding: 10px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                      <div>
+                        <span style="color: var(--neon-emerald); font-weight: bold;">\u{1F7E2} Local Ollama Connected!</span>
+                        <div style="color: var(--dash-text-muted); font-size: 11px; margin-top: 2px;">Your machine is ready to generate unlimited free fixes.</div>
+                      </div>
+                      ${this.settings.modelProvider!=="ollama"?`
+                        <button type="button" class="ah-dash-btn small green" id="ah-connect-ollama-btn" style="padding: 4px 8px; font-size: 11px; margin-left: 10px; border-radius: 4px;">Use Local LLM</button>
+                      `:""}
+                    </div>
+                    `:`
+                    <div class="ah-ollama-alert" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--dash-border); border-radius: 6px; padding: 10px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                      <div>
+                        <span style="color: var(--dash-text-muted); font-weight: bold;">\u26AA Local Ollama offline</span>
+                        <div style="color: var(--dash-text-muted); font-size: 11px; margin-top: 2px;">Start Ollama locally to unlock free, unlimited debug sessions.</div>
+                      </div>
+                      <button type="button" class="ah-dash-btn small secondary" id="ah-retry-ollama-btn" style="padding: 4px 8px; font-size: 11px; margin-left: 10px; border-radius: 4px;">Detect</button>
+                    </div>
+                    `}
+                  </div>
+
                   <div class="ah-settings-actions">
                     <button type="button" class="ah-dash-btn secondary" id="ah-settings-cancel">Cancel</button>
                     <button type="submit" class="ah-dash-btn green">Save Cloud Settings</button>
@@ -959,7 +1082,7 @@ Self-Healing UI Diagnostic System
         </div>
 
       </div>
-    `,this.container.querySelectorAll(".heal-trigger-btn").forEach(r=>{r.addEventListener("click",d=>{let u=d.currentTarget.dataset.id,v=this.errorList.find(E=>E.id===u);v&&this.triggerSimulatedHeal(v)})}),this.container.querySelectorAll(".evolve-trigger-btn").forEach(r=>{r.addEventListener("click",d=>{let u=d.currentTarget.dataset.gauge;u&&this.triggerSimulatedEvolution(u)})});let i=this.container.querySelector("#ah-dash-reseed-trigger");i&&i.addEventListener("click",async()=>{try{this.addTerminalLog("Requesting live mock database re-seeding...","comment");let d=await(await fetch("http://localhost:3001/api/telemetry/reseed",{method:"POST",headers:{"x-site-id":window.location.host}})).json();if(d.success&&d.errors)this.errorList=d.errors,window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Reset & populated live mock telemetry database successfully.","success");else throw new Error("Reseed request failed on server.")}catch{this.errorList=this.getMockErrors(),window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Reset & populated local mock telemetry dataset.","info")}window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.errorList})),this.render()});let c=this.container.querySelector("#ah-dash-empty-reseed");c&&c.addEventListener("click",async()=>{try{this.addTerminalLog("Requesting live mock database re-seeding...","comment");let d=await(await fetch("http://localhost:3001/api/telemetry/reseed",{method:"POST",headers:{"x-site-id":window.location.host}})).json();if(d.success&&d.errors)this.errorList=d.errors,window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Populated live mock telemetry database successfully.","success");else throw new Error("Reseed request failed on server.")}catch{this.errorList=this.getMockErrors(),window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Populated local mock telemetry dataset.","info")}window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.errorList})),this.render()});let p=this.container.querySelector("#ah-dash-settings-trigger"),g=this.container.querySelector("#ah-settings-panel"),b=this.container.querySelector("#ah-settings-cancel"),h=this.container.querySelector("#ah-dash-settings-form");p&&g&&p.addEventListener("click",()=>{g.style.display=g.style.display==="none"?"block":"none"}),b&&g&&b.addEventListener("click",()=>{g.style.display="none"}),h&&g&&h.addEventListener("submit",r=>{r.preventDefault();let d=document.getElementById("ah-n8n-url-input").value,u=document.getElementById("ah-vercel-url-input").value,v=document.getElementById("ah-git-branch-input").value,E=document.getElementById("ah-model-provider-input").value,f=document.getElementById("ah-gemini-key-input").value,k=document.getElementById("ah-groq-key-input").value;this.saveSettings(d,u,v,E,f,k),g.style.display="none"});let y=document.getElementById("ah-dash-terminal");y&&(y.scrollTop=y.scrollHeight)}delay(e){return new Promise(t=>setTimeout(t,e))}injectStyles(){if(document.getElementById("autoheal-dashboard-styles"))return;let e=document.createElement("style");e.id="autoheal-dashboard-styles",e.textContent=`
+    `,this.container.querySelectorAll(".heal-trigger-btn").forEach(d=>{d.addEventListener("click",o=>{let g=o.currentTarget.dataset.id,u=this.errorList.find(y=>y.id===g);u&&this.triggerSimulatedHeal(u)})}),this.container.querySelectorAll(".evolve-trigger-btn").forEach(d=>{d.addEventListener("click",o=>{let g=o.currentTarget.dataset.gauge;g&&this.triggerSimulatedEvolution(g)})});let i=this.container.querySelector("#ah-dash-reseed-trigger");i&&i.addEventListener("click",async()=>{try{this.addTerminalLog("Requesting live mock database re-seeding...","comment");let o=await(await fetch("http://localhost:3001/api/telemetry/reseed",{method:"POST",headers:{"x-site-id":window.location.host}})).json();if(o.success&&o.errors)this.errorList=o.errors,window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Reset & populated live mock telemetry database successfully.","success");else throw new Error("Reseed request failed on server.")}catch{this.errorList=this.getMockErrors(),window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Reset & populated local mock telemetry dataset.","info")}window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.errorList})),this.render()});let n=this.container.querySelector("#ah-dash-empty-reseed");n&&n.addEventListener("click",async()=>{try{this.addTerminalLog("Requesting live mock database re-seeding...","comment");let o=await(await fetch("http://localhost:3001/api/telemetry/reseed",{method:"POST",headers:{"x-site-id":window.location.host}})).json();if(o.success&&o.errors)this.errorList=o.errors,window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Populated live mock telemetry database successfully.","success");else throw new Error("Reseed request failed on server.")}catch{this.errorList=this.getMockErrors(),window.__autoheal_errors_cache__=this.errorList,this.addTerminalLog("Populated local mock telemetry dataset.","info")}window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.errorList})),this.render()});let p=this.container.querySelector("#ah-dash-settings-trigger"),c=this.container.querySelector("#ah-settings-panel"),m=this.container.querySelector("#ah-settings-cancel"),v=this.container.querySelector("#ah-dash-settings-form");if(p&&c&&p.addEventListener("click",()=>{c.style.display=c.style.display==="none"?"block":"none"}),m&&c&&m.addEventListener("click",()=>{c.style.display="none"}),v&&c){let d=document.getElementById("ah-model-provider-input");d&&d.addEventListener("change",()=>{let u=d.value,y=document.getElementById("ah-gemini-key-input")?.closest(".ah-input-group"),E=document.getElementById("ah-groq-key-input")?.closest(".ah-input-group"),f=document.getElementById("ah-ollama-url-group"),x=document.getElementById("ah-ollama-model-group");y&&(y.style.display=u==="gemini"?"block":"none"),E&&(E.style.display=u==="groq"?"block":"none"),f&&(f.style.display=u==="ollama"?"block":"none"),x&&(x.style.display=u==="ollama"?"block":"none")});let o=this.container?.querySelector("#ah-connect-ollama-btn");o&&o.addEventListener("click",()=>{this.addTerminalLog("Connecting local Ollama LLM provider automatically...","comment"),this.saveSettings(this.settings.n8nWebhook,this.settings.vercelDeployHook,this.settings.gitBranch,"ollama",this.settings.geminiKey,this.settings.groqKey,this.settings.ollamaUrl||"http://localhost:11434",this.settings.ollamaModel||"llama3"),this.addTerminalLog("Successfully switched to local Ollama provider! Enjoy unlimited free debug heals.","success")});let g=this.container?.querySelector("#ah-retry-ollama-btn");g&&g.addEventListener("click",async()=>{this.addTerminalLog("Scanning local network for Ollama server...","comment"),await this.checkLocalOllama()?(this.localOllamaDetected=!0,this.addTerminalLog("Local Ollama server detected! \u{1F7E2} Now ready for unlimited free patches.","success")):this.addTerminalLog('Ollama server is offline on http://localhost:11434. Please run "ollama serve" to start it.',"error"),this.render()}),v.addEventListener("submit",u=>{u.preventDefault();let y=document.getElementById("ah-n8n-url-input").value,E=document.getElementById("ah-vercel-url-input").value,f=document.getElementById("ah-git-branch-input").value,x=document.getElementById("ah-model-provider-input").value,k=document.getElementById("ah-gemini-key-input").value,C=document.getElementById("ah-groq-key-input").value,$=document.getElementById("ah-ollama-url-input")?.value||"http://localhost:11434",P=document.getElementById("ah-ollama-model-input")?.value||"llama3";this.saveSettings(y,E,f,x,k,C,$,P),c.style.display="none"})}let h=document.getElementById("ah-dash-terminal");h&&(h.scrollTop=h.scrollHeight)}delay(e){return new Promise(t=>setTimeout(t,e))}injectStyles(){if(document.getElementById("autoheal-dashboard-styles"))return;let e=document.createElement("style");e.id="autoheal-dashboard-styles",e.textContent=`
       @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
 
       /* Cyberpunk Slate Variables */
@@ -1399,4 +1522,4 @@ Self-Healing UI Diagnostic System
         gap: 12px;
         margin-top: 10px;
       }
-    `,document.head.appendChild(e)}},L=new A;var I=class{interceptor=new T;config={autoHealEnabled:!0};initialized=!1;caughtErrors=[];constructor(){}init(e){this.initialized||(this.initialized=!0,this.config={...this.config,...e},e.email&&w.setConfig(e.email),window.__autoheal_errors_cache__=this.caughtErrors,x.init(async t=>{if(this.config.onHealRequest)return await this.config.onHealRequest(t);let s=t.type==="feature",a=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",o=window.AUTOHEAL_SITE_ID||window.location.host;try{let l=await(await fetch(`${a}/api/generate-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":o},body:JSON.stringify(s?{prompt:t.message,file:t.source||"sandbox"}:{error:t,file:t.source||"sandbox"})})).json();if(!l.success)throw new Error(l.explanation);return{success:!0,diffCode:l.diffCode,files:l.files||[],healedFileContent:l.healedFileContent,targetPath:l.targetPath||"sandbox"}}catch(n){return console.error("__autoheal_internal__ Standalone generation error:",n),{success:!1,diffCode:"",explanation:n.message}}}),this.interceptor.start(t=>{this.caughtErrors.push(t),window.__autoheal_errors_cache__=this.caughtErrors,fetch("http://localhost:3001/api/telemetry",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({error:t})}).then(a=>a.json()).then(a=>{a.success&&a.errors&&window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:a.errors}))}).catch(a=>{console.warn("__autoheal_internal__ Telemetry database sync warning:",a),window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.caughtErrors}))}),w.sendErrorEmail(t),localStorage.getItem("autoheal_autonomous")==="true"&&t.type!=="feature"?(x.showToast("\u26A1 Autonomous Mode: Analyzing crash in background...","info"),this.runAutonomousHealer(t,x)):t.type==="crash"?x.triggerHardCrashOverlay(t):x.reportSoftError(t)}),console.log("__autoheal_internal__ AutoHealUI SDK active and monitoring logs."))}async runAutonomousHealer(e,t){try{let s=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",a=window.AUTOHEAL_SITE_ID||window.location.host,n=await(await fetch(`${s}/api/generate-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":a},body:JSON.stringify({error:e,file:e.source||"sandbox"})})).json();if(!n.success)throw new Error(n.explanation);t.showToast("\u{1F52E} Autonomous Mode: Patch generated! Deploying to GitHub...","info");let i=await(await fetch(`${s}/api/apply-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":a},body:JSON.stringify({files:n.files&&n.files.length>0?n.files:void 0,content:n.healedFileContent,file:n.targetPath||e.source||"sandbox",prompt:e.message})})).json();i.success?t.showToast("\u{1F680} Autonomous Patch deployed successfully! Vercel is building...","success"):t.showToast(`\u274C Autonomous deploy failed: ${i.error}`,"error")}catch(s){t.showToast(`\u274C Autonomous patch failed: ${s.message}`,"error")}}mountDashboard(e){L.mount(e)}shutdown(){this.interceptor.stop(),this.initialized=!1}get getConfig(){return this.config}get patcher(){return D}get emailer(){return w}get widget(){return x}get dashboard(){return L}},$=new I;typeof window<"u"&&window.AUTOHEAL_SITE_ID&&setTimeout(()=>{$.init({})},100);return R(j);})();
+    `,document.head.appendChild(e)}},I=new M;var S=class{interceptor=new T;config={autoHealEnabled:!0};initialized=!1;caughtErrors=[];constructor(){}init(e){this.initialized||(this.initialized=!0,this.config={...this.config,...e},e.email&&L.setConfig(e.email),window.__autoheal_errors_cache__=this.caughtErrors,w.init(async t=>{if(this.config.onHealRequest)return await this.config.onHealRequest(t);let s=t.type==="feature",a=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",l=window.AUTOHEAL_SITE_ID||window.location.host;try{let i=await(await fetch(`${a}/api/generate-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":l},body:JSON.stringify(s?{prompt:t.message,file:t.source||"sandbox"}:{error:t,file:t.source||"sandbox"})})).json();if(!i.success)throw new Error(i.explanation);return{success:!0,diffCode:i.diffCode,files:i.files||[],healedFileContent:i.healedFileContent,targetPath:i.targetPath||"sandbox"}}catch(r){return console.error("__autoheal_internal__ Standalone generation error:",r),{success:!1,diffCode:"",explanation:r.message}}}),this.interceptor.start(t=>{this.caughtErrors.push(t),window.__autoheal_errors_cache__=this.caughtErrors,fetch("http://localhost:3001/api/telemetry",{method:"POST",headers:{"Content-Type":"application/json","x-site-id":window.location.host},body:JSON.stringify({error:t})}).then(a=>a.json()).then(a=>{a.success&&a.errors&&window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:a.errors}))}).catch(a=>{console.warn("__autoheal_internal__ Telemetry database sync warning:",a),window.dispatchEvent(new CustomEvent("__autoheal_telemetry_update__",{detail:this.caughtErrors}))}),L.sendErrorEmail(t),localStorage.getItem("autoheal_autonomous")==="true"&&t.type!=="feature"?(w.showToast("\u26A1 Autonomous Mode: Analyzing crash in background...","info"),this.runAutonomousHealer(t,w)):t.type==="crash"?w.triggerHardCrashOverlay(t):w.reportSoftError(t)}),console.log("__autoheal_internal__ AutoHealUI SDK active and monitoring logs."))}async runAutonomousHealer(e,t){try{let s=window.AUTOHEAL_ENDPOINT||"http://localhost:3001",a=window.AUTOHEAL_SITE_ID||window.location.host,r=await(await fetch(`${s}/api/generate-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":a},body:JSON.stringify({error:e,file:e.source||"sandbox"})})).json();if(!r.success)throw new Error(r.explanation);t.showToast("\u{1F52E} Autonomous Mode: Patch generated! Deploying to GitHub...","info");let n=await(await fetch(`${s}/api/apply-patch`,{method:"POST",headers:{"Content-Type":"application/json","x-site-id":a},body:JSON.stringify({files:r.files&&r.files.length>0?r.files:void 0,content:r.healedFileContent,file:r.targetPath||e.source||"sandbox",prompt:e.message})})).json();n.success?t.showToast("\u{1F680} Autonomous Patch deployed successfully! Vercel is building...","success"):t.showToast(`\u274C Autonomous deploy failed: ${n.error}`,"error")}catch(s){t.showToast(`\u274C Autonomous patch failed: ${s.message}`,"error")}}mountDashboard(e){I.mount(e)}shutdown(){this.interceptor.stop(),this.initialized=!1}get getConfig(){return this.config}get patcher(){return A}get emailer(){return L}get widget(){return w}get dashboard(){return I}},B=new S;typeof window<"u"&&window.AUTOHEAL_SITE_ID&&setTimeout(()=>{B.init({})},100);return q(F);})();

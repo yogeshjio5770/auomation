@@ -7,6 +7,8 @@ export interface DashboardConfig {
   modelProvider?: string;
   geminiKey?: string;
   groqKey?: string;
+  ollamaUrl?: string;
+  ollamaModel?: string;
 }
 
 export class AutoHealDashboard {
@@ -14,6 +16,7 @@ export class AutoHealDashboard {
   private isConnected = true;
   private errorList: ErrorData[] = [];
   private currentTerminalLogs: string[] = [];
+  private localOllamaDetected = false;
 
   private settings = {
     n8nWebhook: '',
@@ -21,7 +24,9 @@ export class AutoHealDashboard {
     gitBranch: 'main',
     modelProvider: 'groq',
     geminiKey: '',
-    groqKey: ''
+    groqKey: '',
+    ollamaUrl: 'http://localhost:11434',
+    ollamaModel: 'llama3'
   };
 
   private scores = {
@@ -97,7 +102,28 @@ export class AutoHealDashboard {
     }
   }
 
+  private async checkLocalOllama(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000);
+      const res = await fetch('http://localhost:11434/api/tags', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      return res.ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
   private async initData() {
+    // Check for local Ollama server automatically
+    this.checkLocalOllama().then(detected => {
+      if (detected) {
+        this.localOllamaDetected = true;
+        this.addTerminalLog('Local Ollama server detected automatically! 🟢 Unlimited free patch generation available.', 'success');
+        this.render();
+      }
+    });
+
     try {
       const siteId = window.location.host;
       const headers = { 'x-site-id': siteId };
@@ -189,7 +215,9 @@ export class AutoHealDashboard {
     gitBranch: string,
     modelProvider?: string,
     geminiKey?: string,
-    groqKey?: string
+    groqKey?: string,
+    ollamaUrl?: string,
+    ollamaModel?: string
   ) {
     const updatedSettings: Partial<typeof this.settings> = {
       n8nWebhook: n8nUrl.trim(),
@@ -200,6 +228,8 @@ export class AutoHealDashboard {
     if (modelProvider) updatedSettings.modelProvider = modelProvider;
     if (geminiKey !== undefined) updatedSettings.geminiKey = geminiKey.trim();
     if (groqKey !== undefined) updatedSettings.groqKey = groqKey.trim();
+    if (ollamaUrl !== undefined) updatedSettings.ollamaUrl = ollamaUrl.trim();
+    if (ollamaModel !== undefined) updatedSettings.ollamaModel = ollamaModel.trim();
 
     // Optimistic local update
     this.settings = { ...this.settings, ...updatedSettings };
@@ -547,7 +577,6 @@ export class AutoHealDashboard {
 
     const n8nWebhook = this.settings.n8nWebhook || '';
     const vercelHook = this.settings.vercelDeployHook || '';
-    const gitBranch = this.settings.gitBranch || 'main';
 
     const scorePolish = this.scores.polish;
     const scoreSpacing = this.scores.spacing;
@@ -726,23 +755,53 @@ export class AutoHealDashboard {
                   </div>
                   <div class="ah-input-group">
                     <label>Target Git Repository Branch</label>
-                    <input type="text" id="ah-git-branch-input" class="ah-text-input" placeholder="main" value="${gitBranch}" />
-                  </div>
-                  <div class="ah-input-group">
+                    <input type="text" id="ah-git-branch-input" class="ah-text-input" placehold                  <div class="ah-input-group">
                     <label>Autonomous AI Engine Provider</label>
                     <select id="ah-model-provider-input" class="ah-text-input">
                       <option value="gemini" ${this.settings.modelProvider === 'gemini' ? 'selected' : ''}>Google Gemini</option>
                       <option value="groq" ${this.settings.modelProvider === 'groq' ? 'selected' : ''}>Groq (Llama 3)</option>
+                      <option value="ollama" ${this.settings.modelProvider === 'ollama' ? 'selected' : ''}>Ollama (Local LLM)</option>
                     </select>
                   </div>
-                  <div class="ah-input-group">
+                  <div class="ah-input-group" style="${this.settings.modelProvider === 'gemini' ? '' : 'display: none;'}">
                     <label>Google Gemini API Key</label>
                     <input type="password" id="ah-gemini-key-input" class="ah-text-input" placeholder="Enter Gemini API Key..." value="${this.settings.geminiKey || ''}" />
                   </div>
-                  <div class="ah-input-group">
+                  <div class="ah-input-group" style="${this.settings.modelProvider === 'groq' ? '' : 'display: none;'}">
                     <label>Groq API Key</label>
                     <input type="password" id="ah-groq-key-input" class="ah-text-input" placeholder="Enter Groq API Key..." value="${this.settings.groqKey || ''}" />
                   </div>
+                  <div class="ah-input-group" id="ah-ollama-url-group" style="${this.settings.modelProvider === 'ollama' ? '' : 'display: none;'}">
+                    <label>Ollama Server URL</label>
+                    <input type="text" id="ah-ollama-url-input" class="ah-text-input" placeholder="http://localhost:11434" value="${this.settings.ollamaUrl || 'http://localhost:11434'}" />
+                  </div>
+                  <div class="ah-input-group" id="ah-ollama-model-group" style="${this.settings.modelProvider === 'ollama' ? '' : 'display: none;'}">
+                    <label>Ollama Model Name</label>
+                    <input type="text" id="ah-ollama-model-input" class="ah-text-input" placeholder="llama3" value="${this.settings.ollamaModel || 'llama3'}" />
+                  </div>
+
+                  <div style="margin-top: 15px; margin-bottom: 15px;">
+                    ${this.localOllamaDetected ? `
+                    <div class="ah-ollama-alert" style="background: rgba(0, 255, 102, 0.08); border: 1px solid var(--neon-emerald); border-radius: 6px; padding: 10px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                      <div>
+                        <span style="color: var(--neon-emerald); font-weight: bold;">🟢 Local Ollama Connected!</span>
+                        <div style="color: var(--dash-text-muted); font-size: 11px; margin-top: 2px;">Your machine is ready to generate unlimited free fixes.</div>
+                      </div>
+                      ${this.settings.modelProvider !== 'ollama' ? `
+                        <button type="button" class="ah-dash-btn small green" id="ah-connect-ollama-btn" style="padding: 4px 8px; font-size: 11px; margin-left: 10px; border-radius: 4px;">Use Local LLM</button>
+                      ` : ''}
+                    </div>
+                    ` : `
+                    <div class="ah-ollama-alert" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--dash-border); border-radius: 6px; padding: 10px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                      <div>
+                        <span style="color: var(--dash-text-muted); font-weight: bold;">⚪ Local Ollama offline</span>
+                        <div style="color: var(--dash-text-muted); font-size: 11px; margin-top: 2px;">Start Ollama locally to unlock free, unlimited debug sessions.</div>
+                      </div>
+                      <button type="button" class="ah-dash-btn small secondary" id="ah-retry-ollama-btn" style="padding: 4px 8px; font-size: 11px; margin-left: 10px; border-radius: 4px;">Detect</button>
+                    </div>
+                    `}
+                  </div>
+
                   <div class="ah-settings-actions">
                     <button type="button" class="ah-dash-btn secondary" id="ah-settings-cancel">Cancel</button>
                     <button type="submit" class="ah-dash-btn green">Save Cloud Settings</button>
@@ -850,6 +909,58 @@ export class AutoHealDashboard {
     }
 
     if (settingsForm && settingsPanel) {
+      // Dynamic Field Toggle Listener
+      const providerSelect = document.getElementById('ah-model-provider-input') as HTMLSelectElement;
+      if (providerSelect) {
+        providerSelect.addEventListener('change', () => {
+          const val = providerSelect.value;
+          const geminiGroup = document.getElementById('ah-gemini-key-input')?.closest('.ah-input-group') as HTMLElement;
+          const groqGroup = document.getElementById('ah-groq-key-input')?.closest('.ah-input-group') as HTMLElement;
+          const ollamaUrlGroup = document.getElementById('ah-ollama-url-group');
+          const ollamaModelGroup = document.getElementById('ah-ollama-model-group');
+
+          if (geminiGroup) geminiGroup.style.display = val === 'gemini' ? 'block' : 'none';
+          if (groqGroup) groqGroup.style.display = val === 'groq' ? 'block' : 'none';
+          if (ollamaUrlGroup) ollamaUrlGroup.style.display = val === 'ollama' ? 'block' : 'none';
+          if (ollamaModelGroup) ollamaModelGroup.style.display = val === 'ollama' ? 'block' : 'none';
+        });
+      }
+
+      // Connect Ollama Automatically
+      const connectOllamaBtn = this.container?.querySelector('#ah-connect-ollama-btn');
+      if (connectOllamaBtn) {
+        connectOllamaBtn.addEventListener('click', () => {
+          this.addTerminalLog('Connecting local Ollama LLM provider automatically...', 'comment');
+          this.saveSettings(
+            this.settings.n8nWebhook,
+            this.settings.vercelDeployHook,
+            this.settings.gitBranch,
+            'ollama',
+            this.settings.geminiKey,
+            this.settings.groqKey,
+            this.settings.ollamaUrl || 'http://localhost:11434',
+            this.settings.ollamaModel || 'llama3'
+          );
+          this.addTerminalLog('Successfully switched to local Ollama provider! Enjoy unlimited free debug heals.', 'success');
+        });
+      }
+
+      // Retry/Detect Ollama
+      const retryOllamaBtn = this.container?.querySelector('#ah-retry-ollama-btn');
+      if (retryOllamaBtn) {
+        retryOllamaBtn.addEventListener('click', async () => {
+          this.addTerminalLog('Scanning local network for Ollama server...', 'comment');
+          const detected = await this.checkLocalOllama();
+          if (detected) {
+            this.localOllamaDetected = true;
+            this.addTerminalLog('Local Ollama server detected! 🟢 Now ready for unlimited free patches.', 'success');
+          } else {
+            this.addTerminalLog('Ollama server is offline on http://localhost:11434. Please run "ollama serve" to start it.', 'error');
+          }
+          this.render();
+        });
+      }
+
       settingsForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const n8nUrl = (document.getElementById('ah-n8n-url-input') as HTMLInputElement).value;
@@ -858,8 +969,10 @@ export class AutoHealDashboard {
         const modelProvider = (document.getElementById('ah-model-provider-input') as HTMLSelectElement).value;
         const geminiKey = (document.getElementById('ah-gemini-key-input') as HTMLInputElement).value;
         const groqKey = (document.getElementById('ah-groq-key-input') as HTMLInputElement).value;
+        const ollamaUrl = (document.getElementById('ah-ollama-url-input') as HTMLInputElement)?.value || 'http://localhost:11434';
+        const ollamaModel = (document.getElementById('ah-ollama-model-input') as HTMLInputElement)?.value || 'llama3';
         
-        this.saveSettings(n8nUrl, vercelUrl, branch, modelProvider, geminiKey, groqKey);
+        this.saveSettings(n8nUrl, vercelUrl, branch, modelProvider, geminiKey, groqKey, ollamaUrl, ollamaModel);
         settingsPanel.style.display = 'none';
       });
     }

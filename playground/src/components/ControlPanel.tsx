@@ -11,6 +11,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
   const [modelProvider, setModelProvider]     = useState('groq');
   const [geminiKey, setGeminiKey]             = useState('');
   const [groqKey, setGroqKey]                 = useState('');
+  const [ollamaUrl, setOllamaUrl]             = useState('http://localhost:11434');
+  const [ollamaModel, setOllamaModel]         = useState('llama3');
+  const [localOllamaDetected, setLocalOllamaDetected] = useState(false);
   const [web3FormsKey, setWeb3FormsKey]       = useState('');
   const [devEmail, setDevEmail]               = useState('');
   const [n8nWebhook, setN8nWebhook]           = useState('');
@@ -25,6 +28,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
     setModelProvider(localStorage.getItem('ah_model_provider') || 'groq');
     setGeminiKey(localStorage.getItem('ah_gemini_key') || '');
     setGroqKey(localStorage.getItem('ah_groq_key') || '');
+    setOllamaUrl(localStorage.getItem('ah_ollama_url') || 'http://localhost:11434');
+    setOllamaModel(localStorage.getItem('ah_ollama_model') || 'llama3');
     setWeb3FormsKey(localStorage.getItem('ah_web3forms_key') || '');
     setDevEmail(localStorage.getItem('ah_dev_email') || '');
     setN8nWebhook(localStorage.getItem('ah_n8n_webhook') || '');
@@ -35,6 +40,18 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
 
     const backend = localStorage.getItem('ah_backend_url') || 'http://localhost:3001';
     setBackendUrl(backend);
+
+    // Auto-detect local Ollama server
+    const checkOllama = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000);
+        const res = await fetch('http://localhost:11434/api/tags', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) setLocalOllamaDetected(true);
+      } catch (e) {}
+    };
+    checkOllama();
 
     // Also sync from server DB
     fetch(`${backend}/api/settings`, {
@@ -50,6 +67,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
         if (settings.githubBranch)     setGithubBranch(settings.githubBranch);
         if (settings.groqKey)          setGroqKey(settings.groqKey);
         if (settings.geminiKey)        setGeminiKey(settings.geminiKey);
+        if (settings.ollamaUrl)        setOllamaUrl(settings.ollamaUrl);
+        if (settings.ollamaModel)      setOllamaModel(settings.ollamaModel);
         if (settings.modelProvider)    setModelProvider(settings.modelProvider);
       })
       .catch(() => {});
@@ -62,6 +81,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
     localStorage.setItem('ah_model_provider', modelProvider);
     localStorage.setItem('ah_gemini_key',     geminiKey.trim());
     localStorage.setItem('ah_groq_key',        groqKey.trim());
+    localStorage.setItem('ah_ollama_url',      ollamaUrl.trim());
+    localStorage.setItem('ah_ollama_model',    ollamaModel.trim());
     localStorage.setItem('ah_web3forms_key',   web3FormsKey.trim());
     localStorage.setItem('ah_dev_email',       devEmail.trim());
     localStorage.setItem('ah_n8n_webhook',     n8nWebhook.trim());
@@ -84,6 +105,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
             modelProvider,
             geminiKey:        geminiKey.trim(),
             groqKey:          groqKey.trim(),
+            ollamaUrl:        ollamaUrl.trim(),
+            ollamaModel:      ollamaModel.trim(),
             n8nWebhook:       n8nWebhook.trim(),
             vercelDeployHook: vercelDeployHook.trim(),
             githubRepo:       githubRepo.trim(),
@@ -163,16 +186,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
                       <span>AI Provider</span>
                     </div>
                     <p className="form-section-desc">
-                      Choose your AI engine for auto-healing errors and evolving the UI.
+                      Select which AI provider and model configuration to heal errors in your application.
                     </p>
-                    <div className="engine-select-container">
+                    <div className="engine-select-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                       <button
                         type="button"
                         onClick={() => setModelProvider('gemini')}
                         className={`module-switch-card ${modelProvider === 'gemini' ? 'active' : ''}`}
                       >
                         <Sparkles size={13} className="neon-purple" />
-                        <span>Google Gemini</span>
+                        <span>Gemini</span>
                       </button>
                       <button
                         type="button"
@@ -180,12 +203,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
                         className={`module-switch-card ${modelProvider === 'groq' ? 'active' : ''}`}
                       >
                         <Cpu size={13} className="neon-cyan" />
-                        <span>Groq (Llama 3)</span>
+                        <span>Groq</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModelProvider('ollama')}
+                        className={`module-switch-card ${modelProvider === 'ollama' ? 'active' : ''}`}
+                      >
+                        <Cpu size={13} className="neon-emerald" />
+                        <span>Ollama</span>
                       </button>
                     </div>
                   </div>
 
-                  {modelProvider === 'gemini' ? (
+                  {modelProvider === 'gemini' && (
                     <div className="form-section">
                       <div className="input-group">
                         <div className="input-icon"><Key size={14} /></div>
@@ -203,7 +234,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
                         </a>
                       </div>
                     </div>
-                  ) : (
+                  )}
+
+                  {modelProvider === 'groq' && (
                     <div className="form-section">
                       <div className="input-group">
                         <div className="input-icon"><Key size={14} /></div>
@@ -222,6 +255,74 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ onConfigChange }) =>
                       </div>
                     </div>
                   )}
+
+                  {modelProvider === 'ollama' && (
+                    <div className="form-section">
+                      <div className="input-row" style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <div className="input-icon"><Globe size={14} /></div>
+                          <input
+                            type="text"
+                            placeholder="http://localhost:11434"
+                            value={ollamaUrl}
+                            onChange={e => setOllamaUrl(e.target.value)}
+                            className="settings-input"
+                          />
+                        </div>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <div className="input-icon"><Cpu size={14} /></div>
+                          <input
+                            type="text"
+                            placeholder="llama3"
+                            value={ollamaModel}
+                            onChange={e => setOllamaModel(e.target.value)}
+                            className="settings-input"
+                          />
+                        </div>
+                      </div>
+                      <p className="form-section-desc" style={{ fontSize: '11px', marginTop: '2px', color: '#8b949e' }}>
+                        Ensure Ollama is running locally. Defaults: URL <code>http://localhost:11434</code>, Model <code>llama3</code>.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="form-section" style={{ marginTop: '16px' }}>
+                    {localOllamaDetected ? (
+                      <div style={{ background: 'rgba(0, 255, 102, 0.08)', border: '1px solid #00ff66', borderRadius: '6px', padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+                        <div>
+                          <span style={{ color: '#00ff66', fontWeight: 'bold' }}>🟢 Local Ollama Connected!</span>
+                          <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '2px' }}>Your machine has unlimited free fixes ready.</div>
+                        </div>
+                        {modelProvider !== 'ollama' && (
+                          <button type="button" onClick={() => setModelProvider('ollama')} style={{ background: '#00ff66', color: '#0a0d14', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
+                            Use Local
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '6px', padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+                        <div>
+                          <span style={{ color: '#8b949e', fontWeight: 'bold' }}>⚪ Local Ollama offline</span>
+                          <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '2px' }}>Run "ollama serve" to unlock free unlimited local debugging.</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const controller = new AbortController();
+                              const timeoutId = setTimeout(() => controller.abort(), 1000);
+                              const res = await fetch('http://localhost:11434/api/tags', { signal: controller.signal });
+                              clearTimeout(timeoutId);
+                              if (res.ok) setLocalOllamaDetected(true);
+                            } catch (_) {}
+                          }}
+                          style={{ background: 'rgba(255,255,255,0.06)', color: '#e6edf3', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+                        >
+                          Detect
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="form-section" style={{ marginTop: '16px' }}>
                     <div className="form-section-title">

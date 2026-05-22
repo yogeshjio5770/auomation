@@ -4,6 +4,7 @@ export class AutoHealWidget {
   private container: HTMLDivElement | null = null;
   private badge: HTMLDivElement | null = null;
   private currentErrors: ErrorData[] = [];
+  private activeError: ErrorData | null = null;
   private onHealHandler: ((error: ErrorData) => Promise<{ success: boolean; diffCode: string }>) | null = null;
 
   constructor() {}
@@ -110,240 +111,18 @@ export class AutoHealWidget {
   }
 
   private openFeatureModal() {
-    if (!this.container) return;
-
-    this.container.classList.remove('ah-hard-crash');
-    this.container.style.display = 'flex';
-
-    this.container.innerHTML = `
-      <div class="ah-diag-modal">
-        <div class="ah-diag-header">
-          <div class="ah-diag-title">
-            <span class="ah-pulse-dot" style="background:#00f0ff"></span>
-            <span>AUTOHEAL AI STUDIO</span>
-          </div>
-          <div>
-            <button class="ah-settings-btn" id="ah-settings-btn" title="Settings">⚙️</button>
-            <button class="ah-close-btn" id="ah-close-modal-btn">✕</button>
-          </div>
-        </div>
-        
-        <div class="ah-diag-body" id="ah-feature-view">
-          <div class="ah-section">
-            <div class="ah-section-title">✨ What would you like to build?</div>
-            <textarea class="ah-feature-input" id="ah-feature-prompt" placeholder="e.g. Add a contact form to this page, or change the background to dark mode..."></textarea>
-          </div>
-
-          <div class="ah-section ah-diag-flow">
-            <div class="ah-console" id="ah-diag-console" style="display:none; height:150px"></div>
-          </div>
-
-          <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
-            <div class="ah-section-title">🔮 Proposed UI Upgrade</div>
-            <div class="ah-diff-viewer" id="ah-diff-box">
-              <!-- Content filled dynamically -->
-            </div>
-          </div>
-        </div>
-
-        <div class="ah-diag-footer" id="ah-feature-footer">
-          <div class="ah-status-message" id="ah-footer-status">Ready to build.</div>
-          <div class="ah-actions">
-            <button class="ah-btn primary" id="ah-build-btn">
-              <span class="ah-btn-spinner" id="ah-btn-loader" style="display: none;"></span>
-              <span id="ah-btn-text">BUILD FEATURE 🚀</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="ah-diag-body" id="ah-settings-view" style="display:none; overflow-y:auto; max-height:350px;">
-          <div class="ah-section">
-            <div class="ah-section-title">⚙️ AI Provider Settings</div>
-            <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your own API key to power the AI Studio. Your key is securely stored in the AutoHeal Master Database.</p>
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Groq API Key (Llama 3)</label>
-              <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:36px; border-radius:4px; font-family: monospace;" placeholder="gsk_..." />
-            </div>
-            <div style="margin-bottom: 12px;">
-              <label style="display:flex; align-items:center; cursor:pointer; font-size:13px; color:#fff;">
-                <input type="checkbox" id="ah-autonomous-toggle" style="margin-right:8px; cursor:pointer; width:16px; height:16px;" />
-                ⚡ Enable Autonomous Auto-Heal (Zero-Click)
-              </label>
-              <p style="color:#888; font-size:11px; margin-top:4px; margin-left: 24px;">Automatically catches crashes, writes a patch, and deploys to GitHub instantly without asking.</p>
-            </div>
-          </div>
-
-          <div class="ah-section" style="border-top: 1px solid #333; padding-top: 16px; margin-top: 16px;">
-            <div class="ah-section-title">📦 Git & Deployment Settings</div>
-            <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your deployment integrations to automatically push patches to live production.</p>
-            
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">GitHub Repository (owner/repo)</label>
-              <input type="text" id="ah-github-repo-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="e.g. Octocat/Hello-World" />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">GitHub Personal Access Token (PAT)</label>
-              <input type="password" id="ah-github-token-input" class="ah-feature-input" style="height:36px; border-radius:4px; font-family: monospace;" placeholder="ghp_..." />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Vercel Deploy Hook URL</label>
-              <input type="text" id="ah-vercel-hook-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="https://api.vercel.com/v1/integrations/deploy/..." />
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">N8N Cloud Bridge Webhook URL (Optional)</label>
-              <input type="text" id="ah-n8n-webhook-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="https://creativekulhad.onrender.com/webhook/..." />
-            </div>
-          </div>
-        </div>
-        
-        <div class="ah-diag-footer" id="ah-settings-footer" style="display:none;">
-          <div class="ah-status-message" id="ah-settings-status" style="color: #4ade80;"></div>
-          <div class="ah-actions">
-            <button class="ah-btn primary" id="ah-save-settings-btn">SAVE SETTINGS</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('ah-close-modal-btn')?.addEventListener('click', () => this.closeDiagnosticModal());
-    
-    // View switching logic
-    const featureView = document.getElementById('ah-feature-view')!;
-    const featureFooter = document.getElementById('ah-feature-footer')!;
-    const settingsView = document.getElementById('ah-settings-view')!;
-    const settingsFooter = document.getElementById('ah-settings-footer')!;
-    let isSettingsMode = false;
-
-    document.getElementById('ah-settings-btn')?.addEventListener('click', async () => {
-      isSettingsMode = !isSettingsMode;
-      if (isSettingsMode) {
-        featureView.style.display = 'none';
-        featureFooter.style.display = 'none';
-        settingsView.style.display = 'block';
-        settingsFooter.style.display = 'flex';
-        
-        // Fetch existing settings to populate the input
-        const autonomousToggle = document.getElementById('ah-autonomous-toggle') as HTMLInputElement;
-        if (autonomousToggle) {
-          autonomousToggle.checked = localStorage.getItem('autoheal_autonomous') === 'true';
-        }
-
-        try {
-          const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
-          const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
-          const res = await fetch(`${endpoint}/api/settings`, { headers: { 'x-site-id': siteId } });
-          const data = await res.json();
-          const settings = data.settings || {};
-          
-          if (settings.groqKey) {
-            (document.getElementById('ah-groq-key-input') as HTMLInputElement).value = settings.groqKey;
-          }
-          if (settings.githubRepo) {
-            (document.getElementById('ah-github-repo-input') as HTMLInputElement).value = settings.githubRepo;
-          }
-          if (settings.githubToken) {
-            (document.getElementById('ah-github-token-input') as HTMLInputElement).value = settings.githubToken;
-          }
-          if (settings.vercelDeployHook) {
-            (document.getElementById('ah-vercel-hook-input') as HTMLInputElement).value = settings.vercelDeployHook;
-          }
-          if (settings.n8nWebhook) {
-            (document.getElementById('ah-n8n-webhook-input') as HTMLInputElement).value = settings.n8nWebhook;
-          }
-        } catch (e) {
-          console.warn('AutoHeal: Could not fetch settings', e);
-        }
-      } else {
-        featureView.style.display = 'block';
-        featureFooter.style.display = 'flex';
-        settingsView.style.display = 'none';
-        settingsFooter.style.display = 'none';
-      }
-    });
-
-    // Save Settings logic
-    document.getElementById('ah-save-settings-btn')?.addEventListener('click', async () => {
-      const groqKey = (document.getElementById('ah-groq-key-input') as HTMLInputElement).value.trim();
-      const githubRepo = (document.getElementById('ah-github-repo-input') as HTMLInputElement)?.value.trim() || '';
-      const githubToken = (document.getElementById('ah-github-token-input') as HTMLInputElement)?.value.trim() || '';
-      const vercelDeployHook = (document.getElementById('ah-vercel-hook-input') as HTMLInputElement)?.value.trim() || '';
-      const n8nWebhook = (document.getElementById('ah-n8n-webhook-input') as HTMLInputElement)?.value.trim() || '';
-      
-      const autonomousToggle = document.getElementById('ah-autonomous-toggle') as HTMLInputElement;
-      if (autonomousToggle) {
-        localStorage.setItem('autoheal_autonomous', autonomousToggle.checked ? 'true' : 'false');
-      }
-
-      const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
-      const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
-      const statusEl = document.getElementById('ah-settings-status')!;
-      
-      statusEl.textContent = 'Saving...';
-      try {
-        const res = await fetch(`${endpoint}/api/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
-          body: JSON.stringify({ 
-            settings: { 
-              groqKey, 
-              githubRepo,
-              githubToken,
-              vercelDeployHook,
-              n8nWebhook,
-              modelProvider: 'groq' 
-            } 
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
-          statusEl.textContent = 'Settings saved successfully! ✅';
-          setTimeout(() => { statusEl.textContent = ''; }, 3000);
-        } else {
-          statusEl.textContent = 'Error saving settings.';
-        }
-      } catch (e) {
-        statusEl.textContent = 'Failed to connect to Master Server.';
-      }
-    });
-    
-    const buildBtn = document.getElementById('ah-build-btn') as HTMLButtonElement;
-    const promptInput = document.getElementById('ah-feature-prompt') as HTMLTextAreaElement;
-
-    buildBtn.addEventListener('click', () => {
-      const prompt = promptInput.value.trim();
-      if (!prompt) return;
-      
-      promptInput.disabled = true;
-      buildBtn.disabled = true;
-      buildBtn.classList.add('disabled');
-      const loader = document.getElementById('ah-btn-loader');
-      if (loader) loader.style.display = 'inline-block';
-      const text = document.getElementById('ah-btn-text');
-      if (text) text.textContent = 'BUILDING...';
-      
-      const consoleEl = document.getElementById('ah-diag-console');
-      if (consoleEl) consoleEl.style.display = 'block';
-
-      // Create a mock ErrorData for the feature request
-      const featureRequest: ErrorData = {
-        id: 'feature_' + Date.now(),
-        type: 'feature',
-        message: prompt,
-        timestamp: new Date().toISOString(),
-        source: window.location.pathname === '/' ? 'src/App.jsx' : window.location.pathname
-      };
-
-      this.runDiagnosticEngine(featureRequest, buildBtn);
-    });
+    this.openUnifiedModal('studio', null, false);
   }
 
   private openDiagnosticModal(error: ErrorData, isHardCrash: boolean) {
+    this.openUnifiedModal('studio', error, isHardCrash);
+  }
+
+  private openUnifiedModal(initialTab: 'studio' | 'logs' | 'settings' = 'studio', error: ErrorData | null = null, isHardCrash: boolean = false) {
     if (!this.container) return;
 
-    // Apply crash background blur if it's a hard crash
+    this.activeError = error;
+
     if (isHardCrash) {
       document.body.classList.add('ah-blur-active');
       this.container.classList.add('ah-hard-crash');
@@ -352,79 +131,595 @@ export class AutoHealWidget {
     }
 
     this.container.style.display = 'flex';
-    
-    const timestamp = new Date(error.timestamp).toLocaleTimeString();
 
     this.container.innerHTML = `
       <div class="ah-diag-modal">
         <div class="ah-diag-header">
           <div class="ah-diag-title">
-            <span class="ah-pulse-dot red"></span>
-            <span>AUTOHEAL SYSTEM DIAGNOSTICS</span>
+            <span class="ah-pulse-dot" style="background:${error ? '#ff4444' : '#00f0ff'}; box-shadow: 0 0 8px ${error ? '#ff4444' : '#00f0ff'};"></span>
+            <span>AUTOHEAL EVOLUTION SYSTEM</span>
           </div>
           <button class="ah-close-btn" id="ah-close-modal-btn">✕</button>
         </div>
-        
-        <div class="ah-diag-body">
-          <div class="ah-section">
-            <div class="ah-section-title">🛑 Captured Exception [${error.type.toUpperCase()}]</div>
-            <div class="ah-error-card">
-              <div class="ah-error-msg">${error.message}</div>
-              ${error.source ? `<div class="ah-error-source">URL: <span>${error.source}</span> ${error.line ? `(Line ${error.line}:${error.column})` : ''}</div>` : ''}
-              ${error.domContext ? `<div class="ah-error-dom">DOM: <code>${this.escapeHTML(error.domContext)}</code></div>` : ''}
-              <div class="ah-timestamp">Caught at ${timestamp} • Logs emailed to developer inbox ✉️</div>
-            </div>
-          </div>
 
-          <div class="ah-section ah-diag-flow">
-            <div class="ah-scanner-container" id="ah-scanner-box">
-              <div class="ah-radar">
-                <div class="ah-radar-sweep"></div>
-                <div class="ah-radar-circle circle-1"></div>
-                <div class="ah-radar-circle circle-2"></div>
-                <div class="ah-radar-circle circle-3"></div>
-              </div>
-              <div class="ah-scanner-label">SCANNING FOR SOLUTIONS...</div>
-            </div>
+        <div class="ah-tab-header">
+          <button class="ah-tab-btn" id="ah-tab-btn-studio">✨ AI Studio</button>
+          <button class="ah-tab-btn" id="ah-tab-btn-logs">🛑 Telemetry Logs</button>
+          <button class="ah-tab-btn" id="ah-tab-btn-settings">⚙️ Settings</button>
+        </div>
 
-            <div class="ah-console" id="ah-diag-console">
-              <div class="ah-console-line comment">> AutoHeal SDK initialized.</div>
-              <div class="ah-console-line error">> INTERCEPTED: ${error.type.toUpperCase()} error detected.</div>
-              <div class="ah-console-line">> Packaging dump data...</div>
-              <div class="ah-console-line success">> Error log emailed to developer email address successfully!</div>
-              <div class="ah-console-line info">> Spawning AI Healing Agent...</div>
-            </div>
-          </div>
+        <!-- ── TAB 1: AI STUDIO ── -->
+        <div class="ah-diag-body" id="ah-feature-view">
+          <!-- Populated dynamically -->
+        </div>
+        <div class="ah-diag-footer" id="ah-feature-footer">
+          <!-- Populated dynamically -->
+        </div>
 
-          <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
-            <div class="ah-section-title">🔮 Proposed Repair Patch</div>
-            <div class="ah-diff-viewer" id="ah-diff-box">
-              <!-- Content filled dynamically -->
-            </div>
+        <!-- ── TAB 2: TELEMETRY LOGS ── -->
+        <div class="ah-diag-body" id="ah-logs-view" style="display:none; overflow-y:auto; max-height:400px;">
+          <div style="text-align:center; padding: 20px; color:#888;">Loading telemetry exception records...</div>
+        </div>
+        <div class="ah-diag-footer" id="ah-logs-footer" style="display:none;">
+          <div class="ah-status-message">Historical caught exceptions.</div>
+          <div class="ah-actions">
+            <button class="ah-btn secondary" id="ah-logs-reseed-btn">🔄 Reseed Mock Logs</button>
           </div>
         </div>
 
-        <div class="ah-diag-footer">
-          <div class="ah-status-message" id="ah-footer-status">Analyzing stack trace...</div>
+        <!-- ── TAB 3: SETTINGS ── -->
+        <div class="ah-diag-body" id="ah-settings-view" style="display:none; overflow-y:auto; max-height:400px;">
+          <!-- Populated dynamically -->
+        </div>
+        <div class="ah-diag-footer" id="ah-settings-footer" style="display:none;">
+          <div class="ah-status-message" id="ah-settings-status" style="color: #00ff66;"></div>
           <div class="ah-actions">
-            <button class="ah-btn secondary" id="ah-ignore-btn">Ignore Error</button>
-            <button class="ah-btn primary disabled" id="ah-patch-btn" disabled>
-              <span class="ah-btn-spinner" id="ah-btn-loader" style="display: inline-block;"></span>
-              <span id="ah-btn-text">Waiting for AI...</span>
-            </button>
+            <button class="ah-btn primary" id="ah-save-settings-btn">SAVE SETTINGS</button>
           </div>
         </div>
       </div>
     `;
 
-    // Hook events
     document.getElementById('ah-close-modal-btn')?.addEventListener('click', () => this.closeDiagnosticModal());
-    document.getElementById('ah-ignore-btn')?.addEventListener('click', () => this.closeDiagnosticModal());
-    
-    const patchBtn = document.getElementById('ah-patch-btn') as HTMLButtonElement;
-    
-    // Start console typing simulator and contact AI
-    this.runDiagnosticEngine(error, patchBtn);
+
+    const tabStudio = document.getElementById('ah-tab-btn-studio')!;
+    const tabLogs = document.getElementById('ah-tab-btn-logs')!;
+    const tabSettings = document.getElementById('ah-tab-btn-settings')!;
+
+    const viewStudio = document.getElementById('ah-feature-view')!;
+    const viewLogs = document.getElementById('ah-logs-view')!;
+    const viewSettings = document.getElementById('ah-settings-view')!;
+
+    const footerStudio = document.getElementById('ah-feature-footer')!;
+    const footerLogs = document.getElementById('ah-logs-footer')!;
+    const footerSettings = document.getElementById('ah-settings-footer')!;
+
+    const activateTab = (tabName: 'studio' | 'logs' | 'settings') => {
+      tabStudio.classList.toggle('active', tabName === 'studio');
+      tabLogs.classList.toggle('active', tabName === 'logs');
+      tabSettings.classList.toggle('active', tabName === 'settings');
+
+      viewStudio.style.display = tabName === 'studio' ? 'block' : 'none';
+      viewLogs.style.display = tabName === 'logs' ? 'block' : 'none';
+      viewSettings.style.display = tabName === 'settings' ? 'block' : 'none';
+
+      if (footerStudio) footerStudio.style.display = tabName === 'studio' ? 'flex' : 'none';
+      if (footerLogs) footerLogs.style.display = tabName === 'logs' ? 'flex' : 'none';
+      if (footerSettings) footerSettings.style.display = tabName === 'settings' ? 'flex' : 'none';
+
+      if (tabName === 'logs') {
+        this.fetchAndRenderLogs();
+      } else if (tabName === 'settings') {
+        this.fetchAndRenderSettings();
+      }
+    };
+
+    tabStudio.addEventListener('click', () => activateTab('studio'));
+    tabLogs.addEventListener('click', () => activateTab('logs'));
+    tabSettings.addEventListener('click', () => activateTab('settings'));
+
+    // Trigger initial state for Studio View
+    this.renderStudioTab(this.activeError);
+
+    // Bind log reseed action
+    document.getElementById('ah-logs-reseed-btn')?.addEventListener('click', async () => {
+      const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+      const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+      try {
+        await fetch(`${endpoint}/api/telemetry/reseed`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId }
+        });
+        this.showToast('🔄 Telemetry mock logs reseeded!', 'success');
+        this.fetchAndRenderLogs();
+      } catch (_) {}
+    });
+
+    activateTab(initialTab);
+  }
+
+  private renderStudioTab(error: ErrorData | null) {
+    const viewStudio = document.getElementById('ah-feature-view')!;
+    const footerStudio = document.getElementById('ah-feature-footer')!;
+    if (!viewStudio || !footerStudio) return;
+
+    if (error) {
+      // It's a Crash Healing View!
+      const timestamp = new Date(error.timestamp).toLocaleTimeString();
+      viewStudio.innerHTML = `
+        <div class="ah-section">
+          <div class="ah-section-title">🛑 Captured Exception [${error.type.toUpperCase()}]</div>
+          <div class="ah-error-card">
+            <div class="ah-error-msg">${error.message}</div>
+            ${error.source ? `<div class="ah-error-source">URL: <span>${error.source}</span> ${error.line ? `(Line ${error.line}:${error.column})` : ''}</div>` : ''}
+            ${error.domContext ? `<div class="ah-error-dom">DOM: <code>${this.escapeHTML(error.domContext)}</code></div>` : ''}
+            <div class="ah-timestamp">Caught at ${timestamp} • Logs emailed to developer inbox ✉️</div>
+          </div>
+        </div>
+
+        <div class="ah-section ah-diag-flow">
+          <div class="ah-scanner-container" id="ah-scanner-box">
+            <div class="ah-radar">
+              <div class="ah-radar-sweep"></div>
+              <div class="ah-radar-circle circle-1"></div>
+              <div class="ah-radar-circle circle-2"></div>
+              <div class="ah-radar-circle circle-3"></div>
+            </div>
+            <div class="ah-scanner-label">SCANNING FOR SOLUTIONS...</div>
+          </div>
+
+          <div class="ah-console" id="ah-diag-console">
+            <div class="ah-console-line comment">> AutoHeal SDK initialized.</div>
+            <div class="ah-console-line error">> INTERCEPTED: ${error.type.toUpperCase()} error detected.</div>
+            <div class="ah-console-line">> Packaging dump data...</div>
+            <div class="ah-console-line success">> Error log emailed to developer email address successfully!</div>
+            <div class="ah-console-line info">> Spawning AI Healing Agent...</div>
+          </div>
+        </div>
+
+        <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
+          <div class="ah-section-title">🔮 Proposed Repair Patch</div>
+          <div class="ah-diff-viewer" id="ah-diff-box">
+            <!-- Content filled dynamically -->
+          </div>
+        </div>
+      `;
+
+      footerStudio.innerHTML = `
+        <div class="ah-status-message" id="ah-footer-status">Analyzing stack trace...</div>
+        <div class="ah-actions">
+          <button class="ah-btn secondary" id="ah-ignore-btn">Ignore Error</button>
+          <button class="ah-btn primary disabled" id="ah-patch-btn" disabled>
+            <span class="ah-btn-spinner" id="ah-btn-loader" style="display: inline-block;"></span>
+            <span id="ah-btn-text">Waiting for AI...</span>
+          </button>
+        </div>
+      `;
+
+      document.getElementById('ah-ignore-btn')?.addEventListener('click', () => this.closeDiagnosticModal());
+      const patchBtn = document.getElementById('ah-patch-btn') as HTMLButtonElement;
+      this.runDiagnosticEngine(error, patchBtn);
+    } else {
+      // It's a Feature Builder prompt view!
+      viewStudio.innerHTML = `
+        <div class="ah-section">
+          <div class="ah-section-title">✨ What would you like to build?</div>
+          <textarea class="ah-feature-input" id="ah-feature-prompt" placeholder="e.g. Add a contact form to this page, or change the background to dark mode..."></textarea>
+        </div>
+
+        <div class="ah-section ah-diag-flow" id="ah-feature-flow-section" style="display:none;">
+          <div class="ah-console" id="ah-diag-console" style="height:150px"></div>
+        </div>
+
+        <div class="ah-section ah-patch-section" id="ah-patch-box" style="display: none;">
+          <div class="ah-section-title">🔮 Proposed UI Upgrade</div>
+          <div class="ah-diff-viewer" id="ah-diff-box">
+            <!-- Content filled dynamically -->
+          </div>
+        </div>
+      `;
+
+      footerStudio.innerHTML = `
+        <div class="ah-status-message" id="ah-footer-status">Ready to build.</div>
+        <div class="ah-actions">
+          <button class="ah-btn primary" id="ah-build-btn">
+            <span class="ah-btn-spinner" id="ah-btn-loader" style="display: none;"></span>
+            <span id="ah-btn-text">BUILD FEATURE 🚀</span>
+          </button>
+        </div>
+      `;
+
+      const buildBtn = document.getElementById('ah-build-btn') as HTMLButtonElement;
+      const promptInput = document.getElementById('ah-feature-prompt') as HTMLTextAreaElement;
+
+      buildBtn?.addEventListener('click', () => {
+        const prompt = promptInput.value.trim();
+        if (!prompt) return;
+        
+        promptInput.disabled = true;
+        buildBtn.disabled = true;
+        buildBtn.classList.add('disabled');
+        const loader = document.getElementById('ah-btn-loader');
+        if (loader) loader.style.display = 'inline-block';
+        const text = document.getElementById('ah-btn-text');
+        if (text) text.textContent = 'BUILDING...';
+        
+        const flowSec = document.getElementById('ah-feature-flow-section');
+        if (flowSec) flowSec.style.display = 'block';
+
+        const featureRequest: ErrorData = {
+          id: 'feature_' + Date.now(),
+          type: 'feature',
+          message: prompt,
+          timestamp: new Date().toISOString(),
+          source: window.location.pathname === '/' ? 'src/App.jsx' : window.location.pathname
+        };
+
+        this.runDiagnosticEngine(featureRequest, buildBtn);
+      });
+    }
+  }
+
+  private async fetchAndRenderLogs() {
+    const viewLogs = document.getElementById('ah-logs-view');
+    if (!viewLogs) return;
+
+    viewLogs.innerHTML = `<div style="text-align:center; padding: 30px; color:#888;"><span class="ah-btn-spinner" style="display:inline-block; margin-right:8px;"></span>Loading exception logs...</div>`;
+
+    const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+    const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+
+    try {
+      const res = await fetch(`${endpoint}/api/telemetry?siteId=${siteId}`, {
+        headers: { 'x-site-id': siteId }
+      });
+      const data = await res.json();
+      const logs: ErrorData[] = data.errors || [];
+
+      if (logs.length === 0) {
+        viewLogs.innerHTML = `
+          <div style="text-align:center; padding: 40px 20px;">
+            <div style="font-size:32px; margin-bottom:12px;">🛡️</div>
+            <div style="font-weight:700; font-size:15px; margin-bottom:6px; color:#fff;">No exceptions caught!</div>
+            <div style="font-size:12px; color:#888; margin-bottom:16px;">This website is currently completely healthy.</div>
+            <button class="ah-btn secondary" id="ah-logs-empty-reseed" style="margin: 0 auto;">Reseed Mock Errors</button>
+          </div>
+        `;
+        document.getElementById('ah-logs-empty-reseed')?.addEventListener('click', async () => {
+          await fetch(`${endpoint}/api/telemetry/reseed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-site-id': siteId }
+          });
+          this.fetchAndRenderLogs();
+        });
+        return;
+      }
+
+      viewLogs.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          ${logs.map(log => {
+            const time = new Date(log.timestamp).toLocaleTimeString();
+            const date = new Date(log.timestamp).toLocaleDateString();
+            const isCrash = log.type === 'crash';
+            
+            return `
+              <div style="background:rgba(255,255,255,0.02); border:1px solid ${isCrash ? 'rgba(255,68,68,0.2)' : 'rgba(255,215,0,0.1)'}; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; text-transform:uppercase; background:${isCrash ? 'rgba(255,68,68,0.15)' : 'rgba(255,215,0,0.1)'}; color:${isCrash ? '#ff4444' : '#ffd700'}; border:1px solid ${isCrash ? 'rgba(255,68,68,0.25)' : 'rgba(255,215,0,0.2)'};">
+                    ${log.type}
+                  </span>
+                  <span style="font-size:10px; color:#666;">${date} ${time}</span>
+                </div>
+                <div style="font-size:13px; font-weight:600; color:#e6edf3; word-break:break-word;">
+                  ${log.message}
+                </div>
+                ${log.source ? `
+                  <div style="font-size:11px; color:#8b949e; font-family:monospace; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px; word-break:break-all;">
+                    Source: ${log.source.substring(log.source.lastIndexOf('/') + 1)} ${log.line ? `:${log.line}` : ''}
+                  </div>
+                ` : ''}
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px; border-top:1px solid rgba(255,255,255,0.04); padding-top:8px;">
+                  <button class="ah-btn secondary small ah-log-heal-btn" data-id="${log.id}" style="padding:4px 10px; font-size:10px; height:24px;">🩺 Heal Exception</button>
+                  <button class="ah-btn secondary small ah-log-clear-btn" data-id="${log.id}" style="padding:4px 10px; font-size:10px; height:24px; border-color:rgba(255,68,68,0.2); color:#ff6b6b;">✕ Clear</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      // Attach event listeners
+      viewLogs.querySelectorAll('.ah-log-heal-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const logId = (e.currentTarget as HTMLButtonElement).dataset.id;
+          const selectedLog = logs.find(l => l.id === logId);
+          if (selectedLog) {
+            this.activeError = selectedLog;
+            const tabStudio = document.getElementById('ah-tab-btn-studio')!;
+            tabStudio.click();
+          }
+        });
+      });
+
+      viewLogs.querySelectorAll('.ah-log-clear-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const logId = (e.currentTarget as HTMLButtonElement).dataset.id;
+          if (logId) {
+            try {
+              await fetch(`${endpoint}/api/telemetry/clear`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+                body: JSON.stringify({ id: logId })
+              });
+              this.showToast('🗑️ Exception record cleared!', 'success');
+              this.fetchAndRenderLogs();
+            } catch (_) {}
+          }
+        });
+      });
+
+    } catch (err) {
+      viewLogs.innerHTML = `<div style="text-align:center; padding: 20px; color:#ff4444;">Failed to fetch exceptions list.</div>`;
+    }
+  }
+
+  private async fetchAndRenderSettings() {
+    const viewSettings = document.getElementById('ah-settings-view');
+    if (!viewSettings) return;
+
+    viewSettings.innerHTML = `
+      <div style="margin-bottom:16px;" id="ah-ollama-detector-banner">
+        <div style="text-align:center; padding: 10px; font-size:12px; color:#888;">Checking local Ollama status...</div>
+      </div>
+
+      <div class="ah-section">
+        <div class="ah-section-title">⚙️ AI Brain Provider</div>
+        <div class="ah-form-group">
+          <select id="ah-provider-select" class="ah-feature-input" style="height:38px; padding:0 10px; background:#0d1117; cursor:pointer;">
+            <option value="gemini">Google Gemini (Cloud)</option>
+            <option value="groq">Groq AI (Llama 3)</option>
+            <option value="ollama">Ollama (Local LLM)</option>
+          </select>
+        </div>
+
+        <!-- Gemini Options -->
+        <div id="ah-settings-gemini-section" style="display:none; margin-bottom:12px;">
+          <div class="ah-form-group">
+            <label class="ah-label">Gemini API Key</label>
+            <input type="password" id="ah-gemini-key-input" class="ah-feature-input" style="height:36px; font-family:monospace;" placeholder="AIzaSy..." />
+            <div style="color:#8b949e; font-size:11px; margin-top:4px;">💡 Get a free key at <a href="https://aistudio.google.com/" target="_blank" style="color:#00f0ff; text-decoration:none;">aistudio.google.com</a></div>
+          </div>
+        </div>
+
+        <!-- Groq Options -->
+        <div id="ah-settings-groq-section" style="display:none; margin-bottom:12px;">
+          <div class="ah-form-group">
+            <label class="ah-label">Groq API Key</label>
+            <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:36px; font-family:monospace;" placeholder="gsk_..." />
+            <div style="color:#8b949e; font-size:11px; margin-top:4px;">💡 Get a key at <a href="https://console.groq.com/" target="_blank" style="color:#00f0ff; text-decoration:none;">console.groq.com</a></div>
+          </div>
+        </div>
+
+        <!-- Ollama Options -->
+        <div id="ah-settings-ollama-section" style="display:none; margin-bottom:12px;">
+          <div style="display:flex; gap:10px;">
+            <div class="ah-form-group" style="flex:1;">
+              <label class="ah-label">Ollama Host</label>
+              <input type="text" id="ah-ollama-url-input" class="ah-feature-input" style="height:36px;" placeholder="http://localhost:11434" />
+            </div>
+            <div class="ah-form-group" style="flex:1;">
+              <label class="ah-label">Ollama Model</label>
+              <input type="text" id="ah-ollama-model-input" class="ah-feature-input" style="height:36px;" placeholder="llama3" />
+            </div>
+          </div>
+          <div style="color:#8b949e; font-size:11px; margin-top:4px;">Ensure your local server is running by executing <code>ollama serve</code>. Default port: 11434.</div>
+        </div>
+
+        <div class="ah-form-group" style="margin-top:12px;">
+          <label style="display:flex; align-items:center; cursor:pointer; font-size:13px; color:#fff;">
+            <input type="checkbox" id="ah-autonomous-toggle" style="margin-right:8px; cursor:pointer; width:16px; height:16px;" />
+            ⚡ Enable Autonomous Auto-Heal (Zero-Click)
+          </label>
+          <p style="color:#888; font-size:11px; margin-top:4px; margin-left:24px;">Automatically catches crashes, writes a patch, and deploys instantly in the background.</p>
+        </div>
+      </div>
+
+      <div class="ah-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top:16px; margin-top:16px;">
+        <div class="ah-section-title">📦 Git & Deployment Settings</div>
+        
+        <div class="ah-form-group">
+          <label class="ah-label">GitHub Repository (owner/repo)</label>
+          <input type="text" id="ah-github-repo-input" class="ah-feature-input" style="height:36px;" placeholder="e.g. Octocat/Hello-World" />
+        </div>
+
+        <div class="ah-form-group">
+          <label class="ah-label">GitHub Personal Access Token (PAT)</label>
+          <input type="password" id="ah-github-token-input" class="ah-feature-input" style="height:36px; font-family:monospace;" placeholder="ghp_..." />
+        </div>
+
+        <div class="ah-form-group">
+          <label class="ah-label">Vercel Deploy Hook URL</label>
+          <input type="text" id="ah-vercel-hook-input" class="ah-feature-input" style="height:36px;" placeholder="https://api.vercel.com/v1/integrations/deploy/..." />
+        </div>
+
+        <div class="ah-form-group">
+          <label class="ah-label">N8N Cloud Bridge Webhook URL (Optional)</label>
+          <input type="text" id="ah-n8n-webhook-input" class="ah-feature-input" style="height:36px;" placeholder="https://..." />
+        </div>
+      </div>
+    `;
+
+    const providerSelect = document.getElementById('ah-provider-select') as HTMLSelectElement;
+    const geminiSection = document.getElementById('ah-settings-gemini-section') as HTMLDivElement;
+    const groqSection = document.getElementById('ah-settings-groq-section') as HTMLDivElement;
+    const ollamaSection = document.getElementById('ah-settings-ollama-section') as HTMLDivElement;
+
+    const updateProviderSections = (provider: string) => {
+      geminiSection.style.display = provider === 'gemini' ? 'block' : 'none';
+      groqSection.style.display = provider === 'groq' ? 'block' : 'none';
+      ollamaSection.style.display = provider === 'ollama' ? 'block' : 'none';
+    };
+
+    providerSelect.addEventListener('change', (e) => {
+      updateProviderSections((e.target as HTMLSelectElement).value);
+    });
+
+    const autonomousToggle = document.getElementById('ah-autonomous-toggle') as HTMLInputElement;
+    if (autonomousToggle) {
+      autonomousToggle.checked = localStorage.getItem('autoheal_autonomous') === 'true';
+    }
+
+    const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
+    const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
+
+    try {
+      const res = await fetch(`${endpoint}/api/settings`, { headers: { 'x-site-id': siteId } });
+      const data = await res.json();
+      const settings = data.settings || {};
+
+      if (settings.modelProvider) {
+        providerSelect.value = settings.modelProvider;
+        updateProviderSections(settings.modelProvider);
+      } else {
+        updateProviderSections('gemini');
+      }
+
+      if (settings.geminiKey) {
+        (document.getElementById('ah-gemini-key-input') as HTMLInputElement).value = settings.geminiKey;
+      }
+      if (settings.groqKey) {
+        (document.getElementById('ah-groq-key-input') as HTMLInputElement).value = settings.groqKey;
+      }
+      if (settings.ollamaUrl) {
+        (document.getElementById('ah-ollama-url-input') as HTMLInputElement).value = settings.ollamaUrl;
+      }
+      if (settings.ollamaModel) {
+        (document.getElementById('ah-ollama-model-input') as HTMLInputElement).value = settings.ollamaModel;
+      }
+      if (settings.githubRepo) {
+        (document.getElementById('ah-github-repo-input') as HTMLInputElement).value = settings.githubRepo;
+      }
+      if (settings.githubToken) {
+        (document.getElementById('ah-github-token-input') as HTMLInputElement).value = settings.githubToken;
+      }
+      if (settings.vercelDeployHook) {
+        (document.getElementById('ah-vercel-hook-input') as HTMLInputElement).value = settings.vercelDeployHook;
+      }
+      if (settings.n8nWebhook) {
+        (document.getElementById('ah-n8n-webhook-input') as HTMLInputElement).value = settings.n8nWebhook;
+      }
+
+    } catch (e) {
+      console.warn('AutoHeal: Could not fetch settings', e);
+      updateProviderSections('gemini');
+    }
+
+    const detectOllamaStatus = async () => {
+      const bannerContainer = document.getElementById('ah-ollama-detector-banner')!;
+      if (!bannerContainer) return;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const res = await fetch('http://localhost:11434/api/tags', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (res.ok) {
+          bannerContainer.innerHTML = `
+            <div class="ah-banner green">
+              <div>
+                <div class="ah-banner-title">🟢 Local Ollama Connected!</div>
+                <div class="ah-banner-desc">Your machine has unlimited free fixes ready on port 11434.</div>
+              </div>
+              <button class="ah-banner-btn" id="ah-use-local-btn">Use Local LLM</button>
+            </div>
+          `;
+          
+          document.getElementById('ah-use-local-btn')?.addEventListener('click', () => {
+            providerSelect.value = 'ollama';
+            updateProviderSections('ollama');
+            (document.getElementById('ah-ollama-url-input') as HTMLInputElement).value = 'http://localhost:11434';
+            (document.getElementById('ah-ollama-model-input') as HTMLInputElement).value = 'llama3';
+            
+            const saveBtn = document.getElementById('ah-save-settings-btn');
+            if (saveBtn) (saveBtn as HTMLButtonElement).click();
+          });
+        } else {
+          showOfflineBanner(bannerContainer);
+        }
+      } catch (_) {
+        showOfflineBanner(bannerContainer);
+      }
+    };
+
+    const showOfflineBanner = (container: HTMLElement) => {
+      container.innerHTML = `
+        <div class="ah-banner grey">
+          <div>
+            <div class="ah-banner-title">⚪ Local Ollama Offline</div>
+            <div class="ah-banner-desc">Start "ollama serve" on your laptop to unlock free, unlimited patches.</div>
+          </div>
+          <button class="ah-banner-btn" id="ah-detect-ollama-btn" style="background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.1);">Detect</button>
+        </div>
+      `;
+      
+      document.getElementById('ah-detect-ollama-btn')?.addEventListener('click', () => {
+        container.innerHTML = `<div style="text-align:center; padding: 10px; font-size:12px; color:#888;">Scanning localhost:11434...</div>`;
+        setTimeout(detectOllamaStatus, 500);
+      });
+    };
+
+    detectOllamaStatus();
+
+    const saveBtn = document.getElementById('ah-save-settings-btn');
+    saveBtn?.addEventListener('click', async () => {
+      const modelProvider = providerSelect.value;
+      const geminiKey = (document.getElementById('ah-gemini-key-input') as HTMLInputElement)?.value.trim() || '';
+      const groqKey = (document.getElementById('ah-groq-key-input') as HTMLInputElement)?.value.trim() || '';
+      const ollamaUrl = (document.getElementById('ah-ollama-url-input') as HTMLInputElement)?.value.trim() || 'http://localhost:11434';
+      const ollamaModel = (document.getElementById('ah-ollama-model-input') as HTMLInputElement)?.value.trim() || 'llama3';
+      const githubRepo = (document.getElementById('ah-github-repo-input') as HTMLInputElement)?.value.trim() || '';
+      const githubToken = (document.getElementById('ah-github-token-input') as HTMLInputElement)?.value.trim() || '';
+      const vercelDeployHook = (document.getElementById('ah-vercel-hook-input') as HTMLInputElement)?.value.trim() || '';
+      const n8nWebhook = (document.getElementById('ah-n8n-webhook-input') as HTMLInputElement)?.value.trim() || '';
+      
+      if (autonomousToggle) {
+        localStorage.setItem('autoheal_autonomous', autonomousToggle.checked ? 'true' : 'false');
+      }
+
+      const statusEl = document.getElementById('ah-settings-status')!;
+      statusEl.textContent = 'Saving settings...';
+
+      try {
+        const res = await fetch(`${endpoint}/api/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
+          body: JSON.stringify({ 
+            settings: { 
+              modelProvider,
+              geminiKey,
+              groqKey, 
+              ollamaUrl,
+              ollamaModel,
+              githubRepo,
+              githubToken,
+              vercelDeployHook,
+              n8nWebhook
+            } 
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusEl.textContent = 'Settings saved successfully! ✅';
+          this.showToast('⚙️ Settings synchronized!', 'success');
+          setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        } else {
+          statusEl.textContent = 'Error saving settings.';
+        }
+      } catch (e) {
+        statusEl.textContent = 'Failed to connect to Master Server.';
+      }
+    });
   }
 
   private async runDiagnosticEngine(error: ErrorData, patchBtn: HTMLButtonElement) {
@@ -620,11 +915,17 @@ export class AutoHealWidget {
     }).join('');
   }
 
-  private showToast(msg: string, type: 'success' | 'warning' = 'success') {
+  public showToast(msg: string, type: 'success' | 'warning' | 'info' | 'error' = 'success') {
     const toast = document.createElement('div');
     toast.className = `ah-toast ${type}`;
+    
+    let icon = '⚡';
+    if (type === 'warning') icon = '⚠️';
+    else if (type === 'info') icon = 'ℹ️';
+    else if (type === 'error') icon = '❌';
+
     toast.innerHTML = `
-      <span class="ah-toast-icon">${type === 'success' ? '⚡' : '⚠️'}</span>
+      <span class="ah-toast-icon">${icon}</span>
       <span>${msg}</span>
     `;
     document.body.appendChild(toast);

@@ -322,9 +322,33 @@ CRITICAL INSTRUCTIONS:
         const token = site.settings.githubToken;
         const branch = site.settings.githubBranch || 'main';
         console.log(`[AutoHeal Server] Fetching file from GitHub Repo: ${repo}/${targetFileUsed} (branch: ${branch})`);
+        
+        // Smart static site detection: Check if the repository has a package.json file.
+        // If package.json is missing, this is a plain static HTML site. Any React/src file targets should be forced to index.html!
+        let hasPackageJson = false;
+        try {
+          const pkgRes = await githubApiCall(token, `/repos/${repo}/contents/package.json?ref=${branch}`, 'GET');
+          if (pkgRes.status === 200) {
+            hasPackageJson = true;
+          }
+        } catch (pkgErr) {
+          console.warn('[AutoHeal Server] Error checking for package.json:', pkgErr.message);
+        }
+
+        const isReactOrJsFile = targetFileUsed.endsWith('App.jsx') || 
+                               targetFileUsed.endsWith('App.tsx') || 
+                               targetFileUsed.endsWith('App.js') || 
+                               targetFileUsed.endsWith('App.css') ||
+                               targetFileUsed.includes('src/');
+
+        if (!hasPackageJson && isReactOrJsFile && targetFileUsed !== 'index.html') {
+          console.log(`[AutoHeal Server] No package.json found. Forcing static index.html fallback instead of React ${targetFileUsed}.`);
+          targetFileUsed = 'index.html';
+        }
+
         let apiRes = await githubApiCall(token, `/repos/${repo}/contents/${targetFileUsed}?ref=${branch}`, 'GET');
         
-        // If file not found (404) and is not index.html, check for index.html as a fallback for static HTML sites
+        // If the file is still not found (404), do a final fallback check for index.html
         if (apiRes.status === 404 && targetFileUsed !== 'index.html') {
           console.log(`[AutoHeal Server] ${targetFileUsed} not found in repository. Checking for index.html fallback...`);
           const indexRes = await githubApiCall(token, `/repos/${repo}/contents/index.html?ref=${branch}`, 'GET');
@@ -414,6 +438,37 @@ Ensure your output is strictly valid JSON. Double-check that all strings are esc
       }
       const resData = await response.json();
       text = resData.choices[0].message.content.trim();
+    } else if (provider === 'ollama') {
+      const ollamaUrl = site.settings?.ollamaUrl || 'http://localhost:11434';
+      const ollamaModel = site.settings?.ollamaModel || 'llama3';
+      console.log(`[AutoHeal Server] Routing generation through local Ollama LLM at ${ollamaUrl} using model ${ollamaModel}`);
+      try {
+        const response = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: ollamaModel,
+            messages: [
+              { role: 'system', content: 'You are an autonomous debugging agent. Output strictly valid JSON conforming exactly to the user schema.' },
+              { role: 'user', content: fullPrompt }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.1
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('Ollama Error:', errText);
+          throw new Error(`Ollama API returned ${response.status}: ${errText}`);
+        }
+        const resData = await response.json();
+        text = resData.choices[0].message.content.trim();
+      } catch (err) {
+        throw new Error(`Ollama connection failed. Make sure your local server is running on ${ollamaUrl} and you have installed your model by running 'ollama run ${ollamaModel}'. Error: ${err.message}`);
+      }
     } else {
       const genAI = new GoogleGenerativeAI(geminiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -1089,6 +1144,15 @@ app.post('/api/telemetry/reseed', async (req, res) => {
   site.errors = getSiteMockErrors(siteId);
   await saveSiteData(siteId, site);
   return res.json({ success: true, errors: site.errors });
+});
+
+// REST Endpoints: Supabase Authentication Config (Public credentials)
+app.get('/api/auth/config', (req, res) => {
+  return res.json({
+    success: true,
+    supabaseUrl: process.env.SUPABASE_URL || process.env.AUTOHEAL_SUPABASE_URL || '',
+    supabaseAnonKey: process.env.SUPABASE_KEY || process.env.AUTOHEAL_SUPABASE_KEY || ''
+  });
 });
 
 // REST Endpoints: Settings parameters
