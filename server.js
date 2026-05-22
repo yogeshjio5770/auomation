@@ -770,37 +770,35 @@ async function saveSiteData(siteId, siteData) {
   const branch = process.env.AUTOHEAL_GITHUB_BRANCH || process.env.GITHUB_BRANCH || 'main';
 
   if (token && repo) {
-    (async () => {
-      try {
-        console.log(`[AutoHeal DB] Background syncing db.json to GitHub...`);
-        let sha = global.githubDbSha || null;
-        const getRes = await githubApiCall(token, `/repos/${repo}/contents/db.json?ref=${branch}`, 'GET');
-        if (getRes.status === 200 && getRes.body && getRes.body.sha) {
-          sha = getRes.body.sha;
-        }
-
-        const putBody = {
-          message: 'chore(db): update db.json [skip ci]',
-          content: Buffer.from(JSON.stringify(db, null, 2)).toString('base64'),
-          branch: branch
-        };
-        if (sha) {
-          putBody.sha = sha;
-        }
-
-        const putRes = await githubApiCall(token, `/repos/${repo}/contents/db.json`, 'PUT', putBody);
-        if (putRes.status === 200 || putRes.status === 201) {
-          console.log(`[AutoHeal DB] Successfully committed db.json to GitHub. Status: ${putRes.status}`);
-          if (putRes.body && putRes.body.content && putRes.body.content.sha) {
-            global.githubDbSha = putRes.body.content.sha;
-          }
-        } else {
-          console.error(`[AutoHeal DB] GitHub commit failed with status ${putRes.status}:`, putRes.body);
-        }
-      } catch (err) {
-        console.error('[AutoHeal DB] GitHub sync background thread error:', err.message);
+    try {
+      console.log(`[AutoHeal DB] Syncing db.json to GitHub repository: ${repo} (${branch})...`);
+      let sha = global.githubDbSha || null;
+      const getRes = await githubApiCall(token, `/repos/${repo}/contents/db.json?ref=${branch}`, 'GET');
+      if (getRes.status === 200 && getRes.body && getRes.body.sha) {
+        sha = getRes.body.sha;
       }
-    })();
+
+      const putBody = {
+        message: 'chore(db): update db.json [skip ci]',
+        content: Buffer.from(JSON.stringify(db, null, 2)).toString('base64'),
+        branch: branch
+      };
+      if (sha) {
+        putBody.sha = sha;
+      }
+
+      const putRes = await githubApiCall(token, `/repos/${repo}/contents/db.json`, 'PUT', putBody);
+      if (putRes.status === 200 || putRes.status === 201) {
+        console.log(`[AutoHeal DB] Successfully committed db.json to GitHub. Status: ${putRes.status}`);
+        if (putRes.body && putRes.body.content && putRes.body.content.sha) {
+          global.githubDbSha = putRes.body.content.sha;
+        }
+      } else {
+        console.error(`[AutoHeal DB] GitHub commit failed with status ${putRes.status}:`, putRes.body);
+      }
+    } catch (err) {
+      console.error('[AutoHeal DB] GitHub sync error:', err.message);
+    }
   }
 
   // 2. Save to Supabase if configured
