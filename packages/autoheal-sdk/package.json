@@ -5,6 +5,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "type": "module",
+  "scripts": {
+    "build": "npx esbuild src/index.ts --bundle --outfile=../../public/autoheal.js --platform=browser --format=iife --global-name=AutoHeal --minify"
+  },
   "keywords": [
     "autoheal",
     "self-healing",

@@ -1,0 +1,14 @@
+{
+  "experimentalServices": {
+    "autoheal-backend": {
+      "type": "web",
+      "routePrefix": "/_/autoheal-backend",
+      "buildCommand": "npm install"
+    },
+    "autoheal-dashboard": {
+      "type": "web",
+      "routePrefix": "/_/autoheal-dashboard",
+      "buildCommand": "npm install && npm run build:playground"
+    }
+  }
+}

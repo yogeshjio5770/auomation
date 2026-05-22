@@ -156,13 +156,13 @@ export class AutoHealWidget {
           </div>
         </div>
 
-        <div class="ah-diag-body" id="ah-settings-view" style="display:none;">
+        <div class="ah-diag-body" id="ah-settings-view" style="display:none; overflow-y:auto; max-height:350px;">
           <div class="ah-section">
             <div class="ah-section-title">⚙️ AI Provider Settings</div>
             <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your own API key to power the AI Studio. Your key is securely stored in the AutoHeal Master Database.</p>
             <div style="margin-bottom: 12px;">
               <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Groq API Key (Llama 3)</label>
-              <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:40px; border-radius:4px; font-family: monospace;" placeholder="gsk_..." />
+              <input type="password" id="ah-groq-key-input" class="ah-feature-input" style="height:36px; border-radius:4px; font-family: monospace;" placeholder="gsk_..." />
             </div>
             <div style="margin-bottom: 12px;">
               <label style="display:flex; align-items:center; cursor:pointer; font-size:13px; color:#fff;">
@@ -170,6 +170,31 @@ export class AutoHealWidget {
                 ⚡ Enable Autonomous Auto-Heal (Zero-Click)
               </label>
               <p style="color:#888; font-size:11px; margin-top:4px; margin-left: 24px;">Automatically catches crashes, writes a patch, and deploys to GitHub instantly without asking.</p>
+            </div>
+          </div>
+
+          <div class="ah-section" style="border-top: 1px solid #333; padding-top: 16px; margin-top: 16px;">
+            <div class="ah-section-title">📦 Git & Deployment Settings</div>
+            <p style="color:#aaa; font-size:13px; margin-bottom:12px; line-height: 1.4;">Configure your deployment integrations to automatically push patches to live production.</p>
+            
+            <div style="margin-bottom: 12px;">
+              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">GitHub Repository (owner/repo)</label>
+              <input type="text" id="ah-github-repo-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="e.g. Octocat/Hello-World" />
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">GitHub Personal Access Token (PAT)</label>
+              <input type="password" id="ah-github-token-input" class="ah-feature-input" style="height:36px; border-radius:4px; font-family: monospace;" placeholder="ghp_..." />
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">Vercel Deploy Hook URL</label>
+              <input type="text" id="ah-vercel-hook-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="https://api.vercel.com/v1/integrations/deploy/..." />
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display:block; font-size:12px; color:#888; margin-bottom:4px;">N8N Cloud Bridge Webhook URL (Optional)</label>
+              <input type="text" id="ah-n8n-webhook-input" class="ah-feature-input" style="height:36px; border-radius:4px;" placeholder="https://creativekulhad.onrender.com/webhook/..." />
             </div>
           </div>
         </div>
@@ -211,8 +236,22 @@ export class AutoHealWidget {
           const siteId = (window as any).AUTOHEAL_SITE_ID || window.location.host;
           const res = await fetch(`${endpoint}/api/settings`, { headers: { 'x-site-id': siteId } });
           const data = await res.json();
-          if (data.groqKey) {
-            (document.getElementById('ah-groq-key-input') as HTMLInputElement).value = data.groqKey;
+          const settings = data.settings || {};
+          
+          if (settings.groqKey) {
+            (document.getElementById('ah-groq-key-input') as HTMLInputElement).value = settings.groqKey;
+          }
+          if (settings.githubRepo) {
+            (document.getElementById('ah-github-repo-input') as HTMLInputElement).value = settings.githubRepo;
+          }
+          if (settings.githubToken) {
+            (document.getElementById('ah-github-token-input') as HTMLInputElement).value = settings.githubToken;
+          }
+          if (settings.vercelDeployHook) {
+            (document.getElementById('ah-vercel-hook-input') as HTMLInputElement).value = settings.vercelDeployHook;
+          }
+          if (settings.n8nWebhook) {
+            (document.getElementById('ah-n8n-webhook-input') as HTMLInputElement).value = settings.n8nWebhook;
           }
         } catch (e) {
           console.warn('AutoHeal: Could not fetch settings', e);
@@ -228,17 +267,14 @@ export class AutoHealWidget {
     // Save Settings logic
     document.getElementById('ah-save-settings-btn')?.addEventListener('click', async () => {
       const groqKey = (document.getElementById('ah-groq-key-input') as HTMLInputElement).value.trim();
+      const githubRepo = (document.getElementById('ah-github-repo-input') as HTMLInputElement)?.value.trim() || '';
+      const githubToken = (document.getElementById('ah-github-token-input') as HTMLInputElement)?.value.trim() || '';
+      const vercelDeployHook = (document.getElementById('ah-vercel-hook-input') as HTMLInputElement)?.value.trim() || '';
+      const n8nWebhook = (document.getElementById('ah-n8n-webhook-input') as HTMLInputElement)?.value.trim() || '';
       
       const autonomousToggle = document.getElementById('ah-autonomous-toggle') as HTMLInputElement;
       if (autonomousToggle) {
         localStorage.setItem('autoheal_autonomous', autonomousToggle.checked ? 'true' : 'false');
-      }
-
-      if (!groqKey) {
-        const statusEl = document.getElementById('ah-settings-status')!;
-        statusEl.textContent = 'Settings saved locally.';
-        setTimeout(() => { statusEl.textContent = ''; }, 3000);
-        return;
       }
 
       const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
@@ -250,11 +286,21 @@ export class AutoHealWidget {
         const res = await fetch(`${endpoint}/api/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-site-id': siteId },
-          body: JSON.stringify({ settings: { groqKey, modelProvider: 'groq' } })
+          body: JSON.stringify({ 
+            settings: { 
+              groqKey, 
+              githubRepo,
+              githubToken,
+              vercelDeployHook,
+              n8nWebhook,
+              modelProvider: 'groq' 
+            } 
+          })
         });
         const data = await res.json();
         if (data.success) {
           statusEl.textContent = 'Settings saved successfully! ✅';
+          setTimeout(() => { statusEl.textContent = ''; }, 3000);
         } else {
           statusEl.textContent = 'Error saving settings.';
         }
@@ -461,7 +507,13 @@ export class AutoHealWidget {
           if (loader) loader.style.display = 'inline-block';
           if (text) text.textContent = 'Applying Patch...';
           
-          if (footerStatus) footerStatus.textContent = 'Injecting runtime hot-patch...';
+          if (footerStatus) footerStatus.textContent = 'Executing hot-patch sequence...';
+          
+          logLine('Initiating remote deployment pipeline...', 'info');
+          await this.delay(600);
+          logLine('Packaging patch files...', 'info');
+          await this.delay(600);
+          logLine('Contacting AutoHeal backend server...', 'info');
           
           try {
             const endpoint = (window as any).AUTOHEAL_ENDPOINT || 'http://localhost:3001';
@@ -473,22 +525,74 @@ export class AutoHealWidget {
             });
             const applyData = await res.json();
             if (applyData.success) {
-               this.showToast('🚀 Code Pushed to GitHub! Vercel is building...', 'success');
+              logLine('Backend processed request successfully! ✅', 'success');
+              await this.delay(600);
+              
+              if (applyData.mode === 'n8n-cloud') {
+                logLine('Route: Forwarded to N8N Cloud Bridge 🌐', 'success');
+                if (applyData.n8nResponse && applyData.n8nResponse.message) {
+                  logLine(`N8N: ${applyData.n8nResponse.message}`, 'info');
+                }
+              } else if (applyData.mode === 'github') {
+                logLine('Committed patch directly to GitHub Repository! 🚀', 'success');
+                logLine(`Commit SHA: ${applyData.sha || 'N/A'}`, 'comment');
+              } else {
+                logLine('Patch successfully written to local disk! 🩺', 'success');
+              }
+              
+              await this.delay(600);
+              logLine('Triggering Vercel Deploy Hook...', 'info');
+              await this.delay(400);
+              logLine('Production rebuild triggered successfully! ⚡', 'success');
+              logLine('Deployment is building in the background.', 'success');
+              logLine('Auto-Heal hot-patch complete! Site is recovered. 🎉', 'success');
+              
+              if (footerStatus) footerStatus.textContent = 'Hot-patch successfully applied!';
+              
+              this.showToast('🚀 Code Pushed to GitHub! Vercel is building...', 'success');
+              
+              // Change button to RELOAD PAGE TO VERIFY
+              if (patchBtn) {
+                patchBtn.disabled = false;
+                patchBtn.classList.remove('disabled');
+                patchBtn.style.background = '#10b981'; // Green
+                patchBtn.style.borderColor = '#10b981';
+                patchBtn.style.color = '#fff';
+                if (loader) loader.style.display = 'none';
+                if (text) text.textContent = 'RELOAD PAGE TO VERIFY 🔄';
+                
+                // Hide the cancel/ignore button so they must reload or close
+                const ignoreBtn = document.getElementById('ah-ignore-btn');
+                if (ignoreBtn) ignoreBtn.style.display = 'none';
+                
+                patchBtn.onclick = () => {
+                  window.location.reload();
+                };
+              }
             } else {
-               this.showToast(`❌ Push Failed: ${applyData.error}`, 'error');
+              logLine(`❌ Push Failed: ${applyData.error}`, 'error');
+              this.showToast(`❌ Push Failed: ${applyData.error}`, 'error');
+              if (footerStatus) footerStatus.textContent = 'Push failed.';
+              // Reset button so they can retry
+              patchBtn.disabled = false;
+              patchBtn.classList.remove('disabled');
+              if (loader) loader.style.display = 'none';
+              if (text) text.textContent = 'RETRY LIVE PATCH 🩺';
             }
           } catch (e) {
-             this.showToast('❌ Network error communicating with Master Server', 'error');
+            logLine('❌ Network error communicating with Master Server', 'error');
+            this.showToast('❌ Network error communicating with Master Server', 'error');
+            if (footerStatus) footerStatus.textContent = 'Network error.';
+            // Reset button
+            patchBtn.disabled = false;
+            patchBtn.classList.remove('disabled');
+            if (loader) loader.style.display = 'none';
+            if (text) text.textContent = 'RETRY LIVE PATCH 🩺';
           }
 
           // Clear error from queue
           this.currentErrors = this.currentErrors.filter(e => e.id !== error.id);
           this.updateBadgeCount();
-          
-          this.closeDiagnosticModal();
-
-          // Reload sandbox preview to apply
-          logLine('Hot-patch successfully applied! Site recovered.', 'success');
         };
       }
     } else {

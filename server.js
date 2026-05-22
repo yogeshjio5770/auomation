@@ -2,6 +2,29 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+
+// Load environment variables from .env.local if present
+const envLocalPath = path.join(__dirname, '.env.local');
+if (fs.existsSync(envLocalPath)) {
+  try {
+    const envContent = fs.readFileSync(envLocalPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const firstEq = trimmed.indexOf('=');
+        if (firstEq > 0) {
+          const key = trimmed.substring(0, firstEq).trim();
+          const val = trimmed.substring(firstEq + 1).trim().replace(/^['"]|['"]$/g, '');
+          process.env[key] = val;
+        }
+      }
+    });
+    console.log('⚡ [AutoHeal Server] Successfully loaded environment variables from .env.local');
+  } catch (err) {
+    console.error('⚠️ [AutoHeal Server] Failed to parse .env.local:', err.message);
+  }
+}
+
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
@@ -132,8 +155,8 @@ app.post('/api/generate-patch', async (req, res) => {
   const site = await getSiteData(siteId);
 
   const provider = site.settings?.modelProvider || 'groq';
-  const groqKey = site.settings?.groqKey || process.env.GROQ_API_KEY;
-  const geminiKey = site.settings?.geminiKey || process.env.GEMINI_API_KEY;
+  const groqKey = site.settings?.groqKey || process.env.GROQ_API_KEY || process.env.AUTOHEAL_GROQ_KEY;
+  const geminiKey = site.settings?.geminiKey || process.env.GEMINI_API_KEY || process.env.AUTOHEAL_GEMINI_KEY;
 
   if (provider === 'groq' && !groqKey) {
     return res.status(400).json({ success: false, explanation: 'Groq API Key is not configured for this site.' });
@@ -464,39 +487,83 @@ app.post('/api/apply-patch', async (req, res) => {
   }
 });
 
-
 // ==========================================
-// MULTI-TENANT SUPABASE CLOUD DATABASE
+// ROBUST MULTI-TENANT DATABASE LAYER (SUPABASE + LOCAL FILE FALLBACK)
 // ==========================================
 const { createClient } = require('@supabase/supabase-js');
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.AUTOHEAL_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_KEY || process.env.AUTOHEAL_SUPABASE_KEY || '';
 const supabase = createClient(supabaseUrl || 'https://example.supabase.co', supabaseKey || 'dummy_key');
+
+const DB_PATH = path.join(__dirname, 'db.json');
+
+function loadLocalDb() {
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+    }
+  } catch (err) {
+    console.error('[AutoHeal DB] Error reading local db.json:', err.message);
+  }
+  return { sites: {} };
+}
+
+function saveLocalDb(db) {
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[AutoHeal DB] Error writing to local db.json:', err.message);
+  }
+}
 
 async function getSiteData(siteId) {
   const normalizedSiteId = siteId || 'localhost:5173';
-  
-  const { data, error } = await supabase
-    .from('sites')
-    .select('data')
-    .eq('id', normalizedSiteId)
-    .single();
+  let site = null;
 
-  let site = data?.data;
+  // 1. Try Supabase if configured
+  if (supabaseUrl && supabaseKey && supabaseUrl !== 'https://example.supabase.co') {
+    try {
+      const { data, error } = await supabase
+        .from('sites')
+        .select('data')
+        .eq('id', normalizedSiteId)
+        .single();
+      
+      if (!error && data?.data) {
+        site = data.data;
+      }
+    } catch (err) {
+      console.warn('[AutoHeal DB] Supabase fetch failed, trying local fallback:', err.message);
+    }
+  }
 
+  // 2. Try local db.json fallback
   if (!site) {
+    const db = loadLocalDb();
+    if (db.sites && db.sites[normalizedSiteId]) {
+      site = db.sites[normalizedSiteId];
+      console.log(`[AutoHeal DB] Loaded site data from local db.json for: ${normalizedSiteId}`);
+    }
+  }
+
+  // 3. Fallback to default blueprint if not found anywhere
+  if (!site) {
+    // Only pre-populate developer credentials for localhost or for their own configured primary domain
+    const isLocal = normalizedSiteId.includes('localhost') || normalizedSiteId.includes('127.0.0.1');
+    const isPrimaryOwner = isLocal || (process.env.AUTOHEAL_GITHUB_REPO && normalizedSiteId.includes(process.env.AUTOHEAL_GITHUB_REPO.split('/')[0]));
+
     site = {
       errors: [],
       customDb: {},
       settings: {
-        n8nWebhook: process.env.N8N_WEBHOOK || '',
-        vercelDeployHook: process.env.VERCEL_DEPLOY_HOOK || '',
-        gitBranch: process.env.GITHUB_BRANCH || 'main',
-        githubRepo: process.env.GITHUB_REPO || '',
-        githubToken: process.env.GITHUB_TOKEN || '',
+        n8nWebhook: isPrimaryOwner ? (process.env.N8N_WEBHOOK || process.env.AUTOHEAL_N8N_WEBHOOK || '') : '',
+        vercelDeployHook: isPrimaryOwner ? (process.env.VERCEL_DEPLOY_HOOK || process.env.AUTOHEAL_VERCEL_DEPLOY_HOOK || '') : '',
+        gitBranch: 'main',
+        githubRepo: isPrimaryOwner ? (process.env.GITHUB_REPO || process.env.AUTOHEAL_GITHUB_REPO || '') : '',
+        githubToken: isPrimaryOwner ? (process.env.GITHUB_TOKEN || process.env.AUTOHEAL_GITHUB_TOKEN || '') : '',
         modelProvider: process.env.MODEL_PROVIDER || 'groq',
-        geminiKey: process.env.GEMINI_API_KEY || '',
-        groqKey: process.env.GROQ_API_KEY || ''
+        geminiKey: process.env.GEMINI_API_KEY || process.env.AUTOHEAL_GEMINI_KEY || '',
+        groqKey: process.env.GROQ_API_KEY || process.env.AUTOHEAL_GROQ_KEY || ''
       },
       scores: { polish: 52, spacing: 60, mobile: 45, conversion: 55 }
     };
@@ -507,15 +574,61 @@ async function getSiteData(siteId) {
 
 async function saveSiteData(siteId, siteData) {
   const normalizedSiteId = siteId || 'localhost:5173';
-  const { error } = await supabase
-    .from('sites')
-    .upsert({ id: normalizedSiteId, data: siteData }, { onConflict: 'id' });
-    
-  if (error) {
-    console.error('[AutoHeal DB] Error saving to Supabase:', error);
+
+  // 1. Always save locally to db.json
+  const db = loadLocalDb();
+  if (!db.sites) db.sites = {};
+  db.sites[normalizedSiteId] = siteData;
+
+  // Sync to user_api_keys table/root locally
+  if (!db.user_api_keys) db.user_api_keys = {};
+  if (siteData.settings) {
+    db.user_api_keys[normalizedSiteId] = {
+      siteId: normalizedSiteId,
+      groqKey: siteData.settings.groqKey || '',
+      geminiKey: siteData.settings.geminiKey || '',
+      githubToken: siteData.settings.githubToken || '',
+      githubRepo: siteData.settings.githubRepo || '',
+      vercelDeployHook: siteData.settings.vercelDeployHook || '',
+      n8nWebhook: siteData.settings.n8nWebhook || '',
+      updatedAt: new Date().toISOString()
+    };
+  }
+  saveLocalDb(db);
+
+  // 2. Save to Supabase if configured
+  if (supabaseUrl && supabaseKey && supabaseUrl !== 'https://example.supabase.co') {
+    try {
+      const { error } = await supabase
+        .from('sites')
+        .upsert({ id: normalizedSiteId, data: siteData }, { onConflict: 'id' });
+      if (error) {
+        console.error('[AutoHeal DB] Supabase upsert error:', error);
+      }
+
+      // Sync credentials to Supabase user_api_keys table
+      if (siteData.settings) {
+        const { error: keyError } = await supabase
+          .from('user_api_keys')
+          .upsert({
+            id: normalizedSiteId,
+            groq_key: siteData.settings.groqKey || '',
+            gemini_key: siteData.settings.geminiKey || '',
+            github_token: siteData.settings.githubToken || '',
+            github_repo: siteData.settings.githubRepo || '',
+            vercel_deploy_hook: siteData.settings.vercelDeployHook || '',
+            n8n_webhook: siteData.settings.n8nWebhook || '',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+        if (keyError) {
+          console.warn('[AutoHeal DB] Supabase optional user_api_keys table sync skipped/failed:', keyError.message);
+        }
+      }
+    } catch (err) {
+      console.error('[AutoHeal DB] Supabase save failed:', err.message);
+    }
   }
 }
-
 function getSiteMockErrors(siteId) {
   const now = Date.now();
   const hostName = siteId || 'localhost:5173';

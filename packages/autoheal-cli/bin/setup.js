@@ -625,9 +625,8 @@ async function main() {
       console.log();
       console.log(`  ${dim('Running')} ${cyan('vercel login')} ${dim('— follow prompts in your browser…')}`);
       try {
-        if (rl) rl.close();
+        if (rl) rl.pause();
         execSync('vercel login', { stdio: 'inherit' });
-        createRL();
         cliLoginCompleted = true;
         // Try to get token from ~/.vercel
         const tokenPath = path.join(process.env.HOME || process.env.USERPROFILE || '', '.vercel', 'auth');
@@ -635,7 +634,10 @@ async function main() {
           const auth = JSON.parse(fs.readFileSync(tokenPath, 'utf8'));
           result.vercelToken = auth.token || '';
         }
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        if (rl) rl.resume();
+      }
     }
   }
 
@@ -990,19 +992,69 @@ async function main() {
   }
 
   if (!injected) {
-    console.log(`  ${yellow('⚠')} No index.html found automatically. Paste this into your HTML <head>:`);
-    console.log();
-    console.log(dim(snippet.split('\n').map(l => '      ' + l).join('\n')));
-  } else {
-    // Automatically commit and push the injected HTML
+    console.log(`  ${yellow('⚠')} No index.html found in this directory. Auto-generating a basic template...`);
+    const boilerplateHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoHeal App</title>
+${snippet}
+</head>
+<body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #0f172a; color: white;">
+  <div style="text-align: center;">
+    <h1 style="margin-bottom: 8px;">Welcome to AutoHeal! 🚀</h1>
+    <p style="color: #94a3b8;">Click the ✨ icon in the bottom right to ask AI to build your site.</p>
+  </div>
+</body>
+</html>`;
+    const indexPath = path.join(process.cwd(), 'index.html');
+    try {
+      fs.writeFileSync(indexPath, boilerplateHtml, 'utf8');
+      console.log(`  ${green('✓')} Created basic ${bold('index.html')} with AutoHeal SDK injected.`);
+      injected = true;
+    } catch (e) {
+      console.log(`  ${yellow('⚠')} Failed to create index.html: ${e.message}`);
+      console.log(dim(snippet.split('\n').map(l => '      ' + l).join('\n')));
+    }
+  }
+
+  if (injected) {
+    // 1. Commit and push to GitHub
     try {
       console.log();
       console.log(dim('  Committing AutoHeal injection to GitHub...'));
       const { execSync } = require('child_process');
-      execSync('git add . && git commit -m "chore: auto-inject AutoHeal SDK" && git push', { stdio: 'ignore' });
-      console.log(`  ${green('✓')} Code pushed to GitHub! Vercel is now deploying your site.`);
-    } catch (err) {
+      execSync('git add -A && git commit -m "chore: auto-inject AutoHeal SDK" && git push', { stdio: 'ignore' });
+      console.log(`  ${green('✓')} Code successfully pushed to GitHub!`);
+    } catch (_) {
       console.log(`  ${yellow('⚠')} Could not auto-push to GitHub. You may need to run 'git push' manually.`);
+    }
+
+    // 2. Deploy directly to Vercel via CLI or npx fallback
+    const hasGlobalVercel = useVercelCLI;
+    const vercelCmd = hasGlobalVercel ? 'vercel' : 'npx vercel';
+    try {
+      console.log();
+      console.log(dim(`  Deploying directly to Vercel via ${hasGlobalVercel ? 'global CLI' : 'npx fallback'}...`));
+      const { execSync } = require('child_process');
+      const output = execSync(`${vercelCmd} --prod --yes`, { cwd: process.cwd(), encoding: 'utf8' });
+      const urlMatch = output.match(/(https:\/\/[^\s]+\.vercel\.app)/);
+      if (urlMatch) {
+        result.vercelProjectUrl = urlMatch[1];
+        console.log(`  ${green('✓')} Deployed directly to Vercel: ${cyan(result.vercelProjectUrl)}`);
+        
+        // Re-update the saved config if the Vercel URL has changed/resolved
+        saveConfig({
+          vercelProjectUrl: result.vercelProjectUrl,
+          siteId: result.vercelProjectUrl.startsWith('http') ? result.vercelProjectUrl : 'https://' + result.vercelProjectUrl
+        });
+      } else {
+        console.log(`  ${green('✓')} Vercel direct deployment complete!`);
+      }
+    } catch (e) {
+      console.log(`  ${yellow('⚠')} Vercel deployment failed: ${e.message}`);
+      console.log(`  ${dim('You can deploy manually later using:')} ${cyan('npx vercel --prod')}`);
     }
   }
 
