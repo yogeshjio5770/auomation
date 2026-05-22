@@ -557,6 +557,52 @@ function saveLocalDb(db) {
   }
 }
 
+let memoryDb = null;
+let lastGithubFetchTime = 0;
+const GITHUB_FETCH_CACHE_MS = 15000;
+
+async function getLatestDb() {
+  const now = Date.now();
+  if (memoryDb && (now - lastGithubFetchTime < GITHUB_FETCH_CACHE_MS)) {
+    return memoryDb;
+  }
+
+  let db = loadLocalDb();
+
+  const token = process.env.AUTOHEAL_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const repo = process.env.AUTOHEAL_GITHUB_REPO || process.env.GITHUB_REPO;
+  const branch = process.env.AUTOHEAL_GITHUB_BRANCH || process.env.GITHUB_BRANCH || 'main';
+
+  if (token && repo) {
+    try {
+      console.log(`[AutoHeal DB] Syncing db.json from GitHub repository: ${repo} (${branch})`);
+      const res = await githubApiCall(token, `/repos/${repo}/contents/db.json?ref=${branch}`, 'GET');
+      if (res.status === 200 && res.body && res.body.content) {
+        const contentStr = Buffer.from(res.body.content, 'base64').toString('utf8');
+        const githubDb = JSON.parse(contentStr);
+        if (githubDb) {
+          if (githubDb.sites) {
+            db.sites = { ...db.sites, ...githubDb.sites };
+          }
+          if (githubDb.user_api_keys) {
+            db.user_api_keys = { ...db.user_api_keys, ...githubDb.user_api_keys };
+          }
+          console.log(`[AutoHeal DB] Successfully loaded and merged ${Object.keys(githubDb.sites || {}).length} sites from GitHub.`);
+        }
+        global.githubDbSha = res.body.sha;
+      } else {
+        console.log(`[AutoHeal DB] GitHub db.json lookup status: ${res.status}. Fallback to local db.json.`);
+      }
+    } catch (err) {
+      console.error('[AutoHeal DB] Error fetching db.json from GitHub:', err.message);
+    }
+  }
+
+  memoryDb = db;
+  lastGithubFetchTime = now;
+  return db;
+}
+
 async function resolveAndSyncCredentials(siteId, site) {
   const normalizedSiteId = siteId || 'localhost:5173';
   if (!site || !site.settings) return;
@@ -592,7 +638,7 @@ async function resolveAndSyncCredentials(siteId, site) {
     }
   }
 
-  const db = loadLocalDb();
+  const db = await getLatestDb();
   const localKeys = (db.user_api_keys && db.user_api_keys[normalizedSiteId]) || {};
 
   let hasChanges = false;
@@ -630,38 +676,7 @@ async function resolveAndSyncCredentials(siteId, site) {
 
   if (hasChanges) {
     console.log(`[AutoHeal DB] Resolved and updated credentials for: ${normalizedSiteId}`);
-    if (!db.sites) db.sites = {};
-    db.sites[normalizedSiteId] = site;
-    if (!db.user_api_keys) db.user_api_keys = {};
-    db.user_api_keys[normalizedSiteId] = {
-      siteId: normalizedSiteId,
-      groqKey: site.settings.groqKey || '',
-      geminiKey: site.settings.geminiKey || '',
-      githubToken: site.settings.githubToken || '',
-      githubRepo: site.settings.githubRepo || '',
-      vercelDeployHook: site.settings.vercelDeployHook || '',
-      n8nWebhook: site.settings.n8nWebhook || '',
-      updatedAt: new Date().toISOString()
-    };
-    saveLocalDb(db);
-
-    if (supabaseUrl && supabaseKey && supabaseUrl !== 'https://example.supabase.co') {
-      supabase.from('sites').upsert({ id: normalizedSiteId, data: site }, { onConflict: 'id' }).catch(err => {
-        console.error('[AutoHeal DB] Async Supabase sync error:', err.message);
-      });
-      supabase.from('user_api_keys').upsert({
-        id: normalizedSiteId,
-        groq_key: site.settings.groqKey || '',
-        gemini_key: site.settings.geminiKey || '',
-        github_token: site.settings.githubToken || '',
-        github_repo: site.settings.githubRepo || '',
-        vercel_deploy_hook: site.settings.vercelDeployHook || '',
-        n8n_webhook: site.settings.n8nWebhook || '',
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' }).catch(err => {
-        console.error('[AutoHeal DB] Async Supabase user_api_keys sync error:', err.message);
-      });
-    }
+    await saveSiteData(normalizedSiteId, site);
   }
 }
 
@@ -686,12 +701,12 @@ async function getSiteData(siteId) {
     }
   }
 
-  // 2. Try local db.json fallback
+  // 2. Try local/GitHub db.json fallback
   if (!site) {
-    const db = loadLocalDb();
+    const db = await getLatestDb();
     if (db.sites && db.sites[normalizedSiteId]) {
       site = db.sites[normalizedSiteId];
-      console.log(`[AutoHeal DB] Loaded site data from local db.json for: ${normalizedSiteId}`);
+      console.log(`[AutoHeal DB] Loaded site data from local db.json/GitHub for: ${normalizedSiteId}`);
     }
   }
 
@@ -726,8 +741,8 @@ async function getSiteData(siteId) {
 async function saveSiteData(siteId, siteData) {
   const normalizedSiteId = siteId || 'localhost:5173';
 
-  // 1. Always save locally to db.json
-  const db = loadLocalDb();
+  // 1. Save locally to db.json
+  const db = await getLatestDb();
   if (!db.sites) db.sites = {};
   db.sites[normalizedSiteId] = siteData;
 
@@ -745,7 +760,48 @@ async function saveSiteData(siteId, siteData) {
       updatedAt: new Date().toISOString()
     };
   }
+  
+  // Write locally (will try to write to local filesystem, might fail on read-only but is saved in memoryDb)
   saveLocalDb(db);
+
+  // Sync to GitHub if token and repo are available
+  const token = process.env.AUTOHEAL_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const repo = process.env.AUTOHEAL_GITHUB_REPO || process.env.GITHUB_REPO;
+  const branch = process.env.AUTOHEAL_GITHUB_BRANCH || process.env.GITHUB_BRANCH || 'main';
+
+  if (token && repo) {
+    (async () => {
+      try {
+        console.log(`[AutoHeal DB] Background syncing db.json to GitHub...`);
+        let sha = global.githubDbSha || null;
+        const getRes = await githubApiCall(token, `/repos/${repo}/contents/db.json?ref=${branch}`, 'GET');
+        if (getRes.status === 200 && getRes.body && getRes.body.sha) {
+          sha = getRes.body.sha;
+        }
+
+        const putBody = {
+          message: 'chore(db): update db.json [skip ci]',
+          content: Buffer.from(JSON.stringify(db, null, 2)).toString('base64'),
+          branch: branch
+        };
+        if (sha) {
+          putBody.sha = sha;
+        }
+
+        const putRes = await githubApiCall(token, `/repos/${repo}/contents/db.json`, 'PUT', putBody);
+        if (putRes.status === 200 || putRes.status === 201) {
+          console.log(`[AutoHeal DB] Successfully committed db.json to GitHub. Status: ${putRes.status}`);
+          if (putRes.body && putRes.body.content && putRes.body.content.sha) {
+            global.githubDbSha = putRes.body.content.sha;
+          }
+        } else {
+          console.error(`[AutoHeal DB] GitHub commit failed with status ${putRes.status}:`, putRes.body);
+        }
+      } catch (err) {
+        console.error('[AutoHeal DB] GitHub sync background thread error:', err.message);
+      }
+    })();
+  }
 
   // 2. Save to Supabase if configured
   if (supabaseUrl && supabaseKey && supabaseUrl !== 'https://example.supabase.co') {
