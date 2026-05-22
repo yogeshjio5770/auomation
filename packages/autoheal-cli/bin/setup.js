@@ -667,7 +667,22 @@ async function main() {
             const projName = result.githubRepo.split('/')[1] || 'autoheal-site';
             const pSpinner = createSpinner(`Creating Vercel project ${bold(projName)}…`);
             try {
-              const proj = await vercelCreateProject(result.vercelToken, projName, result.githubRepo, result.githubToken);
+              let proj = await vercelCreateProject(result.vercelToken, projName, result.githubRepo, result.githubToken);
+              
+              if (proj?.error && (proj.error.code?.includes('git') || proj.error.message?.toLowerCase().includes('git') || proj.error.message?.toLowerCase().includes('permission') || proj.error.message?.toLowerCase().includes('repository'))) {
+                pSpinner.warn(`Vercel requires GitHub App authorization to access your repository.`);
+                console.log();
+                console.log(`  ${yellow('→')} Opening Vercel GitHub App authorization page…`);
+                openBrowser('https://github.com/apps/vercel/installations/new');
+                console.log(`  ${dim('Please authorize Vercel to access ' + result.githubRepo + ', then return here.')}`);
+                console.log();
+                await ask('Press Enter once you have authorized Vercel on GitHub to retry');
+                
+                console.log();
+                pSpinner.warn(`Retrying Vercel project creation ${bold(projName)}…`);
+                proj = await vercelCreateProject(result.vercelToken, projName, result.githubRepo, result.githubToken);
+              }
+
               if (proj?.id) {
                 result.vercelProjectId  = proj.id;
                 result.vercelProjectUrl = `https://${proj.name}.vercel.app`;
