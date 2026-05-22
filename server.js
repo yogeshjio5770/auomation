@@ -49,6 +49,15 @@ const FILE_MAP = {
   sdk: path.resolve(__dirname, 'packages/autoheal-sdk/src/widget.ts'),
 };
 
+function checkIsPrimaryOwner(siteId) {
+  const normalized = (siteId || 'localhost:5173').toLowerCase();
+  const isLocal = normalized.includes('localhost') || normalized.includes('127.0.0.1');
+  const ownerRepo = (process.env.AUTOHEAL_GITHUB_REPO || process.env.GITHUB_REPO || '').split('/')[0];
+  const isPrimaryOwner = isLocal || (ownerRepo && normalized.includes(ownerRepo.toLowerCase()));
+  return !!isPrimaryOwner;
+}
+
+
 const https = require('https');
 
 // Helper to make GitHub API calls using built-in https
@@ -297,26 +306,42 @@ CRITICAL INSTRUCTIONS:
       return res.status(400).json({ success: false, explanation: 'Provide either an error or a prompt.' });
     }
 
+    const isPrimaryOwner = checkIsPrimaryOwner(siteId);
     let actualFileContent = fileContent;
+    const relativeFileMap = {
+      sandbox: 'playground/src/components/SandboxView.tsx',
+      css: 'playground/src/index.css',
+      sdk: 'packages/autoheal-sdk/src/widget.ts',
+    };
+    const repoRelativePath = relativeFileMap[file] || file;
+    let targetFileUsed = repoRelativePath;
+
     if (!actualFileContent) {
-      const relativeFileMap = {
-        sandbox: 'playground/src/components/SandboxView.tsx',
-        css: 'playground/src/index.css',
-        sdk: 'packages/autoheal-sdk/src/widget.ts',
-      };
-      const repoRelativePath = relativeFileMap[file] || file;
-      
       if (site.settings?.githubRepo && site.settings?.githubToken) {
         const repo = site.settings.githubRepo;
         const token = site.settings.githubToken;
         const branch = site.settings.githubBranch || 'main';
-        const apiRes = await githubApiCall(token, `/repos/${repo}/contents/${repoRelativePath}?ref=${branch}`, 'GET');
+        console.log(`[AutoHeal Server] Fetching file from GitHub Repo: ${repo}/${targetFileUsed} (branch: ${branch})`);
+        let apiRes = await githubApiCall(token, `/repos/${repo}/contents/${targetFileUsed}?ref=${branch}`, 'GET');
+        
+        // If file not found (404) and is not index.html, check for index.html as a fallback for static HTML sites
+        if (apiRes.status === 404 && targetFileUsed !== 'index.html') {
+          console.log(`[AutoHeal Server] ${targetFileUsed} not found in repository. Checking for index.html fallback...`);
+          const indexRes = await githubApiCall(token, `/repos/${repo}/contents/index.html?ref=${branch}`, 'GET');
+          if (indexRes.status === 200) {
+            console.log(`[AutoHeal Server] Found index.html fallback! Using index.html as target.`);
+            apiRes = indexRes;
+            targetFileUsed = 'index.html';
+          }
+        }
+
         if (apiRes.status === 200 && apiRes.body?.content) {
           actualFileContent = Buffer.from(apiRes.body.content, 'base64').toString('utf-8');
         }
       }
       
-      if (!actualFileContent) {
+      // Local physical filesystem fallback - restricted to primary owner only to avoid cross-tenant overwrites/reads
+      if (!actualFileContent && isPrimaryOwner) {
         const targetPath = FILE_MAP[file] || path.resolve(__dirname, file || '');
         if (fs.existsSync(targetPath)) {
           if (fs.lstatSync(targetPath).isFile()) {
@@ -328,12 +353,22 @@ CRITICAL INSTRUCTIONS:
       }
     }
 
+    if (!actualFileContent) {
+      return res.status(404).json({
+        success: false,
+        explanation: `Target file "${repoRelativePath}" not found in your repository, and no static index.html fallback was found. Please verify your repository contains the target files.`
+      });
+    }
+
+    const fileExtension = targetFileUsed.split('.').pop() || 'tsx';
+    const fenceLang = fileExtension === 'html' ? 'html' : 'tsx';
+
     const fullPrompt = `
 You are an expert JavaScript, React, and web engineering agent.
 ${aiInstruction}
 
 CURRENT WORKSPACE FILE CONTENT:
-\`\`\`tsx
+\`\`\`${fenceLang}
 ${actualFileContent || '/* File content not provided */'}
 \`\`\`
 
@@ -344,7 +379,7 @@ Your response must be a valid JSON object only, with no markdown styling blocks 
   "diffCode": "A unified Git-style code diff (or a general summary of changes).",
   "files": [
     {
-      "path": "src/App.jsx",
+      "path": "${targetFileUsed}",
       "content": "The COMPLETE updated file content for this specific file."
     }
   ]
@@ -393,12 +428,25 @@ Ensure your output is strictly valid JSON. Double-check that all strings are esc
       .trim();
 
     const json = JSON.parse(cleaned);
+    const responseFiles = json.files || [];
+    
+    // Ensure any React file reference is mapped to index.html if that is our target
+    if (targetFileUsed === 'index.html') {
+      responseFiles.forEach(f => {
+        if (f.path === 'src/App.jsx' || f.path === 'src/App.tsx' || f.path.endsWith('App.jsx') || f.path.endsWith('App.tsx')) {
+          f.path = 'index.html';
+        }
+      });
+    }
+
     return res.json({
       success: json.success ?? true,
       explanation: json.explanation || 'Self-healed via AI.',
       diffCode: json.diffCode || '',
-      files: json.files || []
+      files: responseFiles,
+      targetPath: targetFileUsed
     });
+
   } catch (e) {
     console.error('[AutoHeal Server] AI Generation Error:', e);
     return res.status(500).json({ success: false, explanation: `AI Generation Error: ${e.message}` });
@@ -410,6 +458,7 @@ app.post('/api/apply-patch', async (req, res) => {
   const { file, content, targetText, replacementText, commitMessage: clientCommitMsg, files } = req.body;
   const siteId = req.headers['x-site-id'] || req.body.siteId || 'localhost:5173';
   const site = await getSiteData(siteId);
+  const isPrimaryOwner = checkIsPrimaryOwner(siteId);
 
   const relativeFileMap = {
     sandbox: 'playground/src/components/SandboxView.tsx',
@@ -426,18 +475,20 @@ app.post('/api/apply-patch', async (req, res) => {
     try {
       const patchContent = content || '';
 
-      // Sync patch to physical local codespace/workspace file
-      const localPath = FILE_MAP[file] || (file ? path.resolve(__dirname, file) : null);
-      if (localPath && localPath.startsWith(__dirname)) {
-        try {
-          const parentDir = path.dirname(localPath);
-          if (!fs.existsSync(parentDir)) {
-            fs.mkdirSync(parentDir, { recursive: true });
+      // Sync patch to physical local codespace/workspace file (Only for primary owner)
+      if (isPrimaryOwner) {
+        const localPath = FILE_MAP[file] || (file ? path.resolve(__dirname, file) : null);
+        if (localPath && localPath.startsWith(__dirname)) {
+          try {
+            const parentDir = path.dirname(localPath);
+            if (!fs.existsSync(parentDir)) {
+              fs.mkdirSync(parentDir, { recursive: true });
+            }
+            fs.writeFileSync(localPath, patchContent, 'utf-8');
+            console.log(`[AutoHeal Server] Synchronously saved patch locally to codespace: ${localPath}`);
+          } catch (localWriteErr) {
+            console.warn(`[AutoHeal Server] Local codespace save skipped (possibly production read-only filesystem): ${localWriteErr.message}`);
           }
-          fs.writeFileSync(localPath, patchContent, 'utf-8');
-          console.log(`[AutoHeal Server] Synchronously saved patch locally to codespace: ${localPath}`);
-        } catch (localWriteErr) {
-          console.warn(`[AutoHeal Server] Local codespace save skipped (possibly production read-only filesystem): ${localWriteErr.message}`);
         }
       }
       const webhookPayload = {
@@ -512,19 +563,21 @@ app.post('/api/apply-patch', async (req, res) => {
 
       const filesToProcess = files ? files : [{ path: repoRelativePath, content: content }];
 
-      // Sync patch to physical local codespace/workspace files
-      for (const f of filesToProcess) {
-        const localPath = FILE_MAP[f.path] || (f.path ? path.resolve(__dirname, f.path) : null);
-        if (localPath && localPath.startsWith(__dirname)) {
-          try {
-            const parentDir = path.dirname(localPath);
-            if (!fs.existsSync(parentDir)) {
-              fs.mkdirSync(parentDir, { recursive: true });
+      // Sync patch to physical local codespace/workspace files (Only for primary owner)
+      if (isPrimaryOwner) {
+        for (const f of filesToProcess) {
+          const localPath = FILE_MAP[f.path] || (f.path ? path.resolve(__dirname, f.path) : null);
+          if (localPath && localPath.startsWith(__dirname)) {
+            try {
+              const parentDir = path.dirname(localPath);
+              if (!fs.existsSync(parentDir)) {
+                fs.mkdirSync(parentDir, { recursive: true });
+              }
+              fs.writeFileSync(localPath, f.content, 'utf-8');
+              console.log(`[AutoHeal Server] Synchronously saved patch locally to codespace: ${localPath}`);
+            } catch (localWriteErr) {
+              console.warn(`[AutoHeal Server] Local codespace save skipped (possibly production read-only filesystem): ${localWriteErr.message}`);
             }
-            fs.writeFileSync(localPath, f.content, 'utf-8');
-            console.log(`[AutoHeal Server] Synchronously saved patch locally to codespace: ${localPath}`);
-          } catch (localWriteErr) {
-            console.warn(`[AutoHeal Server] Local codespace save skipped (possibly production read-only filesystem): ${localWriteErr.message}`);
           }
         }
       }
@@ -586,7 +639,11 @@ app.post('/api/apply-patch', async (req, res) => {
     }
   }
 
-  // Fallback to Local Filesystem
+  // Fallback to Local Filesystem (Only for primary owner)
+  if (!isPrimaryOwner) {
+    return res.status(400).json({ error: 'Physical filesystem writing is disabled for multi-tenant deployments. Please configure GitHub settings.' });
+  }
+
   const targetPath = FILE_MAP[file] || (file ? path.resolve(__dirname, file) : null);
   if (!targetPath) {
     return res.status(400).json({ error: 'Please provide a valid file identifier.' });
@@ -599,6 +656,7 @@ app.post('/api/apply-patch', async (req, res) => {
     if (!fs.existsSync(targetPath)) {
       return res.status(404).json({ error: `File not found: ${targetPath}` });
     }
+
 
     let updatedContent = '';
     if (content) {
@@ -716,13 +774,15 @@ async function resolveAndSyncCredentials(siteId, site) {
     return s === '' || s === 'YOUR_GROQ_API_KEY' || s === 'YOUR_GEMINI_API_KEY' || s === 'PLACEHOLDER';
   };
 
+  const isPrimaryOwner = checkIsPrimaryOwner(normalizedSiteId);
+
   const keysToSync = [
-    { settingKey: 'groqKey', dbKey: 'groqKey', supabaseCol: 'groq_key', envFallbacks: ['GROQ_API_KEY', 'AUTOHEAL_GROQ_KEY'] },
-    { settingKey: 'geminiKey', dbKey: 'geminiKey', supabaseCol: 'gemini_key', envFallbacks: ['GEMINI_API_KEY', 'AUTOHEAL_GEMINI_KEY'] },
-    { settingKey: 'githubToken', dbKey: 'githubToken', supabaseCol: 'github_token', envFallbacks: ['GITHUB_TOKEN', 'AUTOHEAL_GITHUB_TOKEN'] },
-    { settingKey: 'githubRepo', dbKey: 'githubRepo', supabaseCol: 'github_repo', envFallbacks: ['GITHUB_REPO', 'AUTOHEAL_GITHUB_REPO'] },
-    { settingKey: 'vercelDeployHook', dbKey: 'vercelDeployHook', supabaseCol: 'vercel_deploy_hook', envFallbacks: ['VERCEL_DEPLOY_HOOK', 'AUTOHEAL_VERCEL_DEPLOY_HOOK'] },
-    { settingKey: 'n8nWebhook', dbKey: 'n8nWebhook', supabaseCol: 'n8n_webhook', envFallbacks: ['N8N_WEBHOOK', 'AUTOHEAL_N8N_WEBHOOK'] }
+    { settingKey: 'groqKey', dbKey: 'groqKey', supabaseCol: 'groq_key', envFallbacks: ['GROQ_API_KEY', 'AUTOHEAL_GROQ_KEY'], requiresPrimary: false },
+    { settingKey: 'geminiKey', dbKey: 'geminiKey', supabaseCol: 'gemini_key', envFallbacks: ['GEMINI_API_KEY', 'AUTOHEAL_GEMINI_KEY'], requiresPrimary: false },
+    { settingKey: 'githubToken', dbKey: 'githubToken', supabaseCol: 'github_token', envFallbacks: ['GITHUB_TOKEN', 'AUTOHEAL_GITHUB_TOKEN'], requiresPrimary: true },
+    { settingKey: 'githubRepo', dbKey: 'githubRepo', supabaseCol: 'github_repo', envFallbacks: ['GITHUB_REPO', 'AUTOHEAL_GITHUB_REPO'], requiresPrimary: true },
+    { settingKey: 'vercelDeployHook', dbKey: 'vercelDeployHook', supabaseCol: 'vercel_deploy_hook', envFallbacks: ['VERCEL_DEPLOY_HOOK', 'AUTOHEAL_VERCEL_DEPLOY_HOOK'], requiresPrimary: true },
+    { settingKey: 'n8nWebhook', dbKey: 'n8nWebhook', supabaseCol: 'n8n_webhook', envFallbacks: ['N8N_WEBHOOK', 'AUTOHEAL_N8N_WEBHOOK'], requiresPrimary: true }
   ];
 
   let supabaseKeys = null;
@@ -757,10 +817,12 @@ async function resolveAndSyncCredentials(siteId, site) {
         resolvedVal = localKeys[item.dbKey];
       }
       if (isPlaceholder(resolvedVal)) {
-        for (const envVar of item.envFallbacks) {
-          if (process.env[envVar]) {
-            resolvedVal = process.env[envVar];
-            break;
+        if (!item.requiresPrimary || isPrimaryOwner) {
+          for (const envVar of item.envFallbacks) {
+            if (process.env[envVar]) {
+              resolvedVal = process.env[envVar];
+              break;
+            }
           }
         }
       }
@@ -815,8 +877,7 @@ async function getSiteData(siteId) {
   // 3. Fallback to default blueprint if not found anywhere
   if (!site) {
     // Only pre-populate developer credentials for localhost or for their own configured primary domain
-    const isLocal = normalizedSiteId.includes('localhost') || normalizedSiteId.includes('127.0.0.1');
-    const isPrimaryOwner = isLocal || (process.env.AUTOHEAL_GITHUB_REPO && normalizedSiteId.includes(process.env.AUTOHEAL_GITHUB_REPO.split('/')[0]));
+    const isPrimaryOwner = checkIsPrimaryOwner(normalizedSiteId);
 
     site = {
       errors: [],
