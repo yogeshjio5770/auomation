@@ -804,6 +804,9 @@ export class AutoHealWidget {
           
           if (footerStatus) footerStatus.textContent = 'Executing hot-patch sequence...';
           
+          const overlayTitle = error.type === 'feature' ? 'Deploying Feature...' : 'Applying AI Fix...';
+          this.showHealingOverlay(overlayTitle, 'Initiating remote deployment pipeline...');
+
           logLine('Initiating remote deployment pipeline...', 'info');
           await this.delay(600);
           logLine('Packaging patch files...', 'info');
@@ -846,6 +849,9 @@ export class AutoHealWidget {
               
               this.showToast('🚀 Code Pushed to GitHub! Vercel is building...', 'success');
               
+              // Trigger auto-reload sequence overlay
+              this.showHealingOverlay('Rebuilding Site...', 'Vercel is applying the AI patch... (approx 15s)', 15000);
+              
               // Change button to RELOAD PAGE TO VERIFY
               if (patchBtn) {
                 patchBtn.disabled = false;
@@ -865,6 +871,7 @@ export class AutoHealWidget {
                 };
               }
             } else {
+              this.hideHealingOverlay();
               logLine(`❌ Push Failed: ${applyData.error}`, 'error');
               this.showToast(`❌ Push Failed: ${applyData.error}`, 'warning');
               if (footerStatus) footerStatus.textContent = 'Push failed.';
@@ -875,6 +882,7 @@ export class AutoHealWidget {
               if (text) text.textContent = 'RETRY LIVE PATCH 🩺';
             }
           } catch (e) {
+            this.hideHealingOverlay();
             logLine('❌ Network error communicating with Master Server', 'error');
             this.showToast('❌ Network error communicating with Master Server', 'warning');
             if (footerStatus) footerStatus.textContent = 'Network error.';
@@ -957,6 +965,85 @@ export class AutoHealWidget {
 
   private delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private showHealingOverlay(title: string, subtitle: string, autoReloadDelay?: number) {
+    this.closeDiagnosticModal(); // Hide the dashboard
+
+    let overlay = document.getElementById('ah-healing-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'ah-healing-overlay';
+      overlay.className = 'ah-full-page-overlay';
+      
+      overlay.innerHTML = `
+        <div class="ah-overlay-scanner">
+          <div class="ah-overlay-icon">✨</div>
+        </div>
+        <div class="ah-overlay-title" id="ah-overlay-title"></div>
+        <div class="ah-overlay-subtitle" id="ah-overlay-subtitle"></div>
+        <div class="ah-overlay-progress">
+          <div class="ah-overlay-progress-bar" id="ah-overlay-progress-bar"></div>
+        </div>
+        <button class="ah-overlay-reload-btn" id="ah-overlay-reload-btn">Force Reload Now</button>
+      `;
+      document.body.appendChild(overlay);
+
+      document.getElementById('ah-overlay-reload-btn')?.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
+
+    const titleEl = document.getElementById('ah-overlay-title');
+    const subtitleEl = document.getElementById('ah-overlay-subtitle');
+    const progressBar = document.getElementById('ah-overlay-progress-bar');
+    const reloadBtn = document.getElementById('ah-overlay-reload-btn');
+
+    if (titleEl) titleEl.textContent = title;
+    if (subtitleEl) subtitleEl.textContent = subtitle;
+    
+    // Reset progress bar animation
+    if (progressBar) {
+      progressBar.style.transition = 'none';
+      progressBar.style.width = '0%';
+      setTimeout(() => {
+        progressBar.style.transition = 'width 2s cubic-bezier(0.4, 0, 0.2, 1)';
+        progressBar.style.width = '100%';
+      }, 50);
+    }
+
+    if (reloadBtn) {
+      reloadBtn.classList.remove('visible');
+    }
+
+    // Trigger fade in
+    setTimeout(() => overlay?.classList.add('visible'), 10);
+
+    if (autoReloadDelay) {
+      if (progressBar) {
+        setTimeout(() => {
+          progressBar.style.transition = `width ${autoReloadDelay}ms linear`;
+          progressBar.style.width = '100%';
+        }, 50);
+      }
+      setTimeout(() => {
+        if (subtitleEl) subtitleEl.textContent = 'Build complete! Reloading your site...';
+        setTimeout(() => window.location.reload(), 1000);
+      }, autoReloadDelay);
+      
+      // Show reload button early just in case
+      setTimeout(() => {
+        if (reloadBtn) reloadBtn.classList.add('visible');
+      }, Math.min(5000, autoReloadDelay / 2));
+    }
+  }
+
+  private hideHealingOverlay() {
+    const overlay = document.getElementById('ah-healing-overlay');
+    if (overlay) {
+      overlay.classList.remove('visible');
+      setTimeout(() => overlay.remove(), 600);
+    }
   }
 
   private injectStyles() {
@@ -1045,6 +1132,129 @@ export class AutoHealWidget {
         background: rgba(10, 12, 16, 0.7);
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
+      }
+
+      /* Full Page Healing Overlay Animation */
+      .ah-full-page-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(10, 15, 25, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        pointer-events: none;
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .ah-full-page-overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .ah-overlay-scanner {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 255, 102, 0.1);
+        position: relative;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 0 50px rgba(0, 255, 102, 0.05);
+      }
+      .ah-overlay-scanner::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 50%;
+        border: 2px solid #00ff66;
+        border-top-color: transparent;
+        border-bottom-color: transparent;
+        animation: ah-spin 2s linear infinite;
+      }
+      .ah-overlay-scanner::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: rgba(0, 255, 102, 0.6);
+        top: 50%;
+        box-shadow: 0 0 10px #00ff66;
+        animation: ah-scan-laser 2s ease-in-out infinite alternate;
+      }
+      .ah-overlay-icon {
+        font-size: 50px;
+        animation: ah-pulse 2s ease-in-out infinite;
+      }
+      .ah-overlay-title {
+        color: #fff;
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+      .ah-overlay-subtitle {
+        color: #00ff66;
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 40px;
+        text-align: center;
+        font-family: 'Fira Code', monospace;
+      }
+      .ah-overlay-progress {
+        width: 300px;
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+      .ah-overlay-progress-bar {
+        position: absolute;
+        top: 0; left: 0; height: 100%;
+        background: #00ff66;
+        width: 0%;
+        box-shadow: 0 0 10px #00ff66;
+      }
+      .ah-overlay-reload-btn {
+        background: transparent;
+        border: 1px solid rgba(0, 255, 102, 0.5);
+        color: #00ff66;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 30px;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .ah-overlay-reload-btn.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .ah-overlay-reload-btn:hover {
+        background: rgba(0, 255, 102, 0.1);
+        box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+      }
+
+      @keyframes ah-spin { 100% { transform: rotate(360deg); } }
+      @keyframes ah-scan-laser {
+        0% { transform: translateY(-70px); }
+        100% { transform: translateY(70px); }
+      }
+      @keyframes ah-pulse {
+        0%, 100% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 20px rgba(0,255,102,0.8); }
       }
       
       /* Blur Body Effect */

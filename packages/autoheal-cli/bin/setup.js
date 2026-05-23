@@ -446,7 +446,11 @@ async function main() {
 
   // Choose / create repo automatically if not set
   console.log();
-  const createNew = !result.githubRepo;
+  let createNew = false;
+  if (!result.githubRepo) {
+    const hasRepo = await askYN('Do you already have a GitHub repository for this project?', false);
+    createNew = !hasRepo;
+  }
 
   if (createNew) {
     const repoName = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'autoheal-site';
@@ -874,7 +878,7 @@ async function main() {
   console.log();
 
   // Backend URL is dynamic — uses the user's Vercel deployment if available, fallback to primary autoheal Vercel app
-  let masterUrl = result.vercelProjectUrl || 'https://auomation.vercel.app';
+  let masterUrl = 'https://auomation.vercel.app';
   if (masterUrl && !masterUrl.startsWith('http')) {
     masterUrl = 'https://' + masterUrl;
   }
@@ -954,9 +958,48 @@ async function main() {
     console.log(`  ${green('✓')} Added ${bold('.env.local')} and ${bold('.autoheal.json')} to .gitignore`);
   }
 
-  // ── AUTO-INJECT SNIPPET INTO index.html ────────────────────────────────────
+  // ── AUTO-INJECT SNIPPET INTO REACT/VITE/NEXT ───────────────────────────────
   console.log();
-  console.log(dim('  Searching for index.html to auto-inject AutoHeal snippet...'));
+  console.log(dim('  Searching for React/Vite/Next.js entry files to auto-inject AutoHeal SDK...'));
+
+  const jsSnippet = `\n// AutoHeal SDK Initialization\nimport { AutoHeal } from '@autoheal/core';\nif (typeof window !== 'undefined') {\n  window.AUTOHEAL_SITE_ID = "${siteId}";\n  window.AUTOHEAL_ENDPOINT = "${masterUrl}";\n  AutoHeal.init({ autoHealEnabled: true });\n}\n`;
+
+  const searchDirsJs = ['.', 'src', 'pages', 'app'];
+  const jsNames = ['main.jsx', 'main.tsx', 'index.jsx', 'index.tsx', 'App.jsx', 'App.tsx', '_app.jsx', '_app.tsx', 'layout.tsx', 'layout.jsx'];
+  let injected = false;
+
+  for (const dir of searchDirsJs) {
+    for (const fname of jsNames) {
+      const jsPath = path.join(process.cwd(), dir, fname);
+      if (!fs.existsSync(jsPath)) continue;
+      try {
+        let code = fs.readFileSync(jsPath, 'utf8');
+        if (!code.includes('@autoheal/core')) {
+          code = jsSnippet + '\n' + code;
+          fs.writeFileSync(jsPath, code, 'utf8');
+          console.log(`  ${green('✓')} Auto-injected AutoHeal React SDK into ${bold(path.relative(process.cwd(), jsPath))}`);
+          
+          console.log(dim('  Installing @autoheal/core npm package...'));
+          const { execSync } = require('child_process');
+          execSync('npm install @autoheal/core', { stdio: 'ignore' });
+          console.log(`  ${green('✓')} Installed @autoheal/core successfully`);
+        } else {
+          console.log(`  ${green('✓')} AutoHeal SDK already injected in ${bold(path.relative(process.cwd(), jsPath))}`);
+        }
+        injected = true;
+        break;
+      } catch (e) {
+        console.log(`  ${yellow('⚠')} Could not write to ${jsPath}: ${e.message}`);
+      }
+    }
+    if (injected) break;
+  }
+
+  // ── AUTO-INJECT SNIPPET INTO index.html (Fallback) ─────────────────────────
+  if (!injected) {
+    console.log();
+    console.log(dim('  No JS/TS entry files found. Searching for index.html to auto-inject AutoHeal snippet...'));
+  }
 
   const snippet = [
     '    <!-- AutoHeal SDK: AI-powered self-healing -->',
@@ -964,30 +1007,33 @@ async function main() {
     `      window.AUTOHEAL_SITE_ID = "${siteId}";`,
     `      window.AUTOHEAL_ENDPOINT = "${masterUrl}";`,
     '    </script>',
-    `    <script src="${masterUrl}/sdk/autoheal.js"></script>`,
+    `    <script src="${masterUrl}/autoheal.js"></script>`,
   ].join('\n');
 
   const searchDirs = ['.', 'public', 'src', 'static', 'dist', 'www'];
   const htmlNames  = ['index.html', 'index.htm'];
-  let injected = false;
 
-  for (const dir of searchDirs) {
-    for (const fname of htmlNames) {
-      const htmlPath = path.join(process.cwd(), dir, fname);
-      if (!fs.existsSync(htmlPath)) continue;
-      try {
-        let html = fs.readFileSync(htmlPath, 'utf8');
-        if (html.includes('AUTOHEAL_SITE_ID')) {
-          // Already has a snippet — update the site ID and URL
-          html = html.replace(
+  if (!injected) {
+    for (const dir of searchDirs) {
+      for (const fname of htmlNames) {
+        const htmlPath = path.join(process.cwd(), dir, fname);
+        if (!fs.existsSync(htmlPath)) continue;
+        try {
+          let html = fs.readFileSync(htmlPath, 'utf8');
+          if (html.includes('AUTOHEAL_SITE_ID')) {
+            // Already has a snippet — update the site ID and URL
+            html = html.replace(
             /window\.AUTOHEAL_SITE_ID\s*=\s*"[^"]*"/,
             `window.AUTOHEAL_SITE_ID = "${siteId}"`
           ).replace(
             /window\.AUTOHEAL_ENDPOINT\s*=\s*"[^"]*"/,
             `window.AUTOHEAL_ENDPOINT = "${masterUrl}"`
           ).replace(
+            /<script src="[^"]*\/autoheal\.js"><\/script>/,
+            `<script src="${masterUrl}/autoheal.js"></script>`
+          ).replace(
             /<script src="[^"]*\/sdk\/autoheal\.js"><\/script>/,
-            `<script src="${masterUrl}/sdk/autoheal.js"></script>`
+            `<script src="${masterUrl}/autoheal.js"></script>`
           );
           fs.writeFileSync(htmlPath, html, 'utf8');
           console.log(`  ${green('✓')} Updated existing AutoHeal snippet in ${bold(path.relative(process.cwd(), htmlPath))}`);
@@ -1025,6 +1071,7 @@ async function main() {
       }
     }
     if (injected) break;
+  }
   }
 
   if (!injected) {
@@ -1089,8 +1136,31 @@ ${snippet}
         console.log(`  ${green('✓')} Vercel direct deployment complete!`);
       }
     } catch (e) {
-      console.log(`  ${yellow('⚠')} Vercel deployment failed: ${e.message}`);
-      console.log(`  ${dim('You can deploy manually later using:')} ${cyan('npx vercel --prod')}`);
+      if (e.message.includes('remove the .vercel directory') || e.message.includes('Could not retrieve Project Settings')) {
+        console.log(`  ${yellow('⚠')} Stale Vercel project detected. Auto-cleaning .vercel directory and retrying...`);
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          fs.rmSync(path.join(process.cwd(), '.vercel'), { recursive: true, force: true });
+          const { execSync } = require('child_process');
+          const retryOutput = execSync(`${vercelCmd} --prod --yes`, { cwd: process.cwd(), encoding: 'utf8' });
+          const urlMatch = retryOutput.match(/(https:\/\/[^\s]+\.vercel\.app)/);
+          if (urlMatch) {
+            result.vercelProjectUrl = urlMatch[1];
+            console.log(`  ${green('✓')} Deployed directly to Vercel (after cleanup): ${cyan(result.vercelProjectUrl)}`);
+            saveConfig({
+              vercelProjectUrl: result.vercelProjectUrl,
+              siteId: result.vercelProjectUrl.startsWith('http') ? result.vercelProjectUrl : 'https://' + result.vercelProjectUrl
+            });
+          }
+        } catch (retryError) {
+          console.log(`  ${yellow('⚠')} Vercel deployment failed after retry: ${retryError.message}`);
+          console.log(`  ${dim('You can deploy manually later using:')} ${cyan('npx vercel --prod')}`);
+        }
+      } else {
+        console.log(`  ${yellow('⚠')} Vercel deployment failed: ${e.message}`);
+        console.log(`  ${dim('You can deploy manually later using:')} ${cyan('npx vercel --prod')}`);
+      }
     }
 
     // 3. Connect Vercel Project to GitHub Repository
@@ -1104,8 +1174,11 @@ ${snippet}
         execSync(`${vercelCmd} git connect "https://github.com/${result.githubRepo}" --yes ${tokenArg}`, { cwd: process.cwd(), stdio: 'inherit' });
         console.log(`  ${green('✓')} Connected Vercel to GitHub successfully!`);
       } catch (gitConnErr) {
-        console.log(`  ${yellow('⚠')} Vercel Git connection warning: ${gitConnErr.message}`);
-        console.log(`  ${dim('You can connect it manually later using:')} ${cyan('npx vercel git connect')}`);
+        console.log(`  ${yellow('⚠')} Vercel needs permission to read this GitHub repository.`);
+        console.log(`  ${dim('GitHub blocks automatic app installations for security reasons.')}`);
+        console.log(`  ${dim('Opening your browser so you can quickly authorize the Vercel app...')}`);
+        openBrowser('https://github.com/apps/vercel/installations/new');
+        console.log(`  ${dim('After you click Authorize, run')} ${cyan('npx vercel git connect')} ${dim('to finish linking.')}`);
       }
     }
   }

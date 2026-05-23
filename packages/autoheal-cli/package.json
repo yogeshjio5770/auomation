@@ -1,6 +1,6 @@
 {
   "name": "autoheal-dev-cli",
-  "version": "1.1.0",
+  "version": "1.2.5",
   "description": "AutoHeal interactive setup wizard — GitHub, Vercel & N8N in 60 seconds",
   "main": "bin/setup.js",
   "bin": {
