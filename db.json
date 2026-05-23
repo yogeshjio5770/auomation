@@ -55,7 +55,7 @@
         "githubBranch": "main",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:ea5c08ff07973604545bb25ea563256b:fee1dc8ff264133fac019d34a3f08de639b58ac7952bec55f64f60e830337ad3"
+        "groqKey": "enc:2e5b9b90604823dfa5262df470a78728:04f1cdef4aec38a7a92f53fddf89dc4f5a9a8795144b359072ae01ea9e8f445d"
       },
       "scores": {
         "polish": 52,
@@ -97,10 +97,10 @@
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/test-autoheal-fresh",
-        "githubToken": "enc:12bd4ff03640132dece43c811e61fcff:cf00761f5920c4da6092f06e830e7df26a30e0fda1f2b437bed6c34bb4dfafa9a906be82458fcab6d4638c25204086b9",
+        "githubToken": "enc:6044e8f4006e0df7cadc4f719af75b8b:6e4b69e18ab44499b6cdc5eb6d2b1624c5fd864bef6498313edc81b7e38191d2fd412c8f40cd104ff6b7c1dba8414a31",
         "modelProvider": "ollama",
         "geminiKey": "",
-        "groqKey": "enc:b40693a395708c1a27056775918ad834:8d3122d28c4597b343d3cfc3ce343606e8529fee47311a53f026902fcb63ec160df557264987a8d3d948985ab2ac9c8d31628c2415ce5a184cbc5931d373e1d4",
+        "groqKey": "enc:1c78fe22125a505d471bbec5793fa025:0d159c93e59244f669d362c60ec7556c2e7235b717bfcb31edbc426136768d89d0235d6ae24932b93ab5379abefa13ec84fa2458c6f6ca5d67fd6b408ee9f44d",
         "githubBranch": "main",
         "ollamaUrl": "http://localhost:11434",
         "ollamaModel": "qwen2.5-coder:7b"
@@ -116,14 +116,14 @@
       "errors": [],
       "customDb": {},
       "settings": {
-        "n8nWebhook": "enc:f5527d47dc941904ad8470938647f383:83167d74dcd890f2ce36d152a81e22d69d4c91f83a47ac01aa8e04cca8e58cb1a816f32ce6949e27262a7b643ae836c686a97c95eb17d73fbb8dd049028562a352aa3e547cb645a48e375310a5be9694",
+        "n8nWebhook": "enc:970b40bfcb8567798df24ef57a6bfce8:11a4fc5245a2ba8ee6df708da29c93c80050fa44cb5bb0fb1123644d0cc571634718794e4d9c636c92e6cc8c5cf4325f777b1affb145bb587e681ef648d54715349f2521e68d101ebe83bdf3f6e6c4a6",
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/2",
-        "githubToken": "enc:260a9ca1259b2abc303d08324386f285:d6933dc01c937c2698c7dcdbac46e525f9e0577e0ccd7f11f9baa361331c5456796ee67e0586214fd40ea78b30f3275f",
+        "githubToken": "enc:c6dbe924c81a3433aca52e87f07f615c:33b650481b9e504a5eec6799a51873a415f59756be8a9a604a5c7c6a2e7f645343ed672e3bdd2253058523b35a57e16d",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:632d32ffc10352e3a33b2438c0ba6bfe:7603c5d350bef42018b5a9090ad5f12fd24ec146ed4fc4287d09b1bc593d1f0e988087e7fcbb48bc6a4e153e29f6a3d318794d3a50d6dc7b16c354f26a4279a8",
+        "groqKey": "enc:b0a40ad02f26c7f9ce6687e0a0187c8b:9a279304f467762f96ab943cddafe72d665c53f6da892c163236ba65b87a2ec71311e92314dbc1d2f1afe37e6de5596c8166583d5f0ad280a13e79bcae915f77",
         "githubBranch": "main",
         "ollamaUrl": "http://localhost:11434",
         "ollamaModel": "llama3"
@@ -139,13 +139,13 @@
       "errors": [],
       "customDb": {},
       "settings": {
-        "n8nWebhook": "enc:b33ec1c09843b6cb940e381662b5f35b:9ed29f4a8a4270e093b76e626da8a67ce9219541ec64ea3d18e8ea5c18336a496c392d594b8cb646421aeaee982323a54ee41fa12e8388c9b689dcbc5bd3a4484287c02cbf5ea2f6869130dfae08aa96",
+        "n8nWebhook": "enc:da188877f98c7065990f9bc2812efb86:e2c4b1b93a5f40ae780596188826b499c90443732131c8406981a4451442d42292d1f3875392c739f21689b0c5ce617970b53779e90baef05954b5b3735cc5c9e0841cce80313f47d341c25426e27ee7",
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/test",
-        "githubToken": "enc:fa498bc420636be69943c38806c363a2:d81fbfe49a9393b547d5ab5e981431355f83661b9d92c0dd7b2c70ddb9f729e41f8fd351d8cb119b40d2d8f684d160e5",
+        "githubToken": "enc:a162c7a9021de2f7dea5163d5624ef46:2edc170374c05f5b6d54b1162b10667cc3d6510767f48c62b29d6cc6156fc4804b1138be23d4b0b3499020e2a1a57448",
         "modelProvider": "groq",
-        "geminiKey": "enc:eba605ec62196091b1c0ccc0c44dc8b4:da7e31b3a68c2d1219fb415c0269b063a5c1f64bb95a8b8a4b50165a0a497436",
+        "geminiKey": "enc:4cd8ba65edb840e04008dfb7a028a504:cb6a986e73924451862f429c8bfd39644d00b85bc4a29e1ae1ba458802b22fcd",
         "groqKey": "",
         "githubBranch": "main"
       },
@@ -215,17 +215,37 @@
       ],
       "customDb": {},
       "settings": {
-        "n8nWebhook": "enc:13fe89dbeb6fc6bdaaea58b0f32b0917:74d104e98a90137a7b61d7b037fd16a081fe892d14c7869feb6b41b5359ff48f647bd1b30c4a1541362a2e4ebf907883c9c199912f4caf6339480005f424a9716adc2f6772051e6c507b3e4afc14b651",
+        "n8nWebhook": "enc:ec10ee152d1327da174fc5f7bb7beadb:caf80dd8941d08b191662df1ff999ab3e5184b62d37e2d847a8c8be4d6eba36593147d29ca22ebeae03084a624e9f72b3128fad187a688db8ddb406d840dace530193bfb1bf57698fc330f0e96df78d1",
         "vercelDeployHook": "",
         "gitBranch": "main",
         "githubRepo": "yogeshjio5770/dqwq",
-        "githubToken": "enc:217ed57dd812fc6beb336787c96659e7:36779a2fa5be980cb43edc00442efbef7a44f7705c083f3874a79de6517619b0de37d82ddf99afd478083d980038b635",
+        "githubToken": "enc:21376e32467af00d9926b0dbae43a9d7:be2dd9a0e22dcc4d4c4dbd63e1505da3bfebdb96cef9d937c6caa18a91e9b69257e7f1ae27870fdefa2fc5d72cfa9b63",
         "modelProvider": "groq",
         "geminiKey": "",
-        "groqKey": "enc:12f860e4863edf2151508e4bcfde035b:54a78ad668193de281a62fb3b611eea224544175db5876e6d3ed1811a17b8e979bb54b6d5a5c637a52a692f856c3e26d738832965a9920e36ca8a9ef1748551f",
+        "groqKey": "enc:7f0f9ae31fcffb8b516f86780dc790cf:21ee1ae0b7f6d323522aed863f54f68a34ee175f2cf25693624c36d1b6e17cbdec37116c83afe01395ec1470459213827baa81da71ee9dac68a3b5e0b5f9b6cb",
         "githubBranch": "main",
         "ollamaUrl": "http://localhost:11434",
         "ollamaModel": "llama3"
+      },
+      "scores": {
+        "polish": 52,
+        "spacing": 60,
+        "mobile": 45,
+        "conversion": 55
+      }
+    },
+    "dqwq-2tyr0eost-yogesh-s-projects6.vercel.app": {
+      "errors": [],
+      "customDb": {},
+      "settings": {
+        "n8nWebhook": "",
+        "vercelDeployHook": "",
+        "gitBranch": "main",
+        "githubRepo": "",
+        "githubToken": "",
+        "modelProvider": "groq",
+        "geminiKey": "",
+        "groqKey": ""
       },
       "scores": {
         "polish": 52,
@@ -238,9 +258,9 @@
   "user_api_keys": {
     "my-awesome-startup": {
       "siteId": "my-awesome-startup",
-      "groqKey": "enc:d4ae67e99a7d21121d586c9b6c8e4e39:a8922ed8f415a87336a04c8ded898e6f3bd1db811c96050c8a4f2e34cf78b087999241e543179b27f544d67be0a2925cb4fa2db7b450c863ced0eb0830f97551",
+      "groqKey": "enc:a9eae138d815545a3c1e265ddc985150:d87655a14446e7df51fd909dfcd1da8d212ec8ff7c09bd7d2bfc880c60786f353773788f76604f190e2b23c5a27e044fc3784b117bbcc006a37c6840a4033852",
       "geminiKey": "",
-      "githubToken": "enc:94c4b5c0a32d970a6a7ca4e8f0272d17:292afbd87e072570d2b7bcb8ec485e9b077a14f172c2a3023727777aeaa7b2c210c22084be57563d50e285bf516a37ac",
+      "githubToken": "enc:9991471eea752720e67e1aa88450b8ef:a7e0823750ab0bfe0b150180077e97161398f7b73d5d76d5c47f7ca9f9ec64d61d4e06bbe80bce0d46952bea95adcb0c",
       "githubRepo": "yogeshjio5770/test-autoheal-fresh",
       "vercelDeployHook": "",
       "n8nWebhook": "",
@@ -248,22 +268,22 @@
     },
     "https://2-ppwlmnvep-yogesh-s-projects6.vercel.app": {
       "siteId": "https://2-ppwlmnvep-yogesh-s-projects6.vercel.app",
-      "groqKey": "enc:223c5f55f3e24c4b2d94735700e2a2b9:f8f66199f162aeed2c7131fe03c29e3f75905665859e6826e75c61f5184ca6e12ad0f77ab573ac759be719aee8b1a768e0f36701082ea802e18254ad085a27b5",
+      "groqKey": "enc:dbf3a19c10d3db88bf5981d6a3083d29:f144832dda0b8c0a81bedaaed44adbe7b05a6a1daae917645c145eb4363f6f45da67ba3683eeb193a475f8aeb4a4496be7da79e5b393b66666a0c7faf26dbc86",
       "geminiKey": "",
-      "githubToken": "enc:88a48f1f00162062c09df3e32c2840d1:4eef5ddd0e02f6db66ca72bdfdccabea28181504f7e0b8c42c7d55dd517dadba0e9c2d5e56c24e2a2c183b8888299cc3",
+      "githubToken": "enc:dcd01a50e1b832a200d3724527813748:993c3c38093b2e4492e1897edf08e65eff760a1a9ec1b8504420c427cc3bf727dec0a3608add9543a25763995b7b8c47",
       "githubRepo": "yogeshjio5770/2",
       "vercelDeployHook": "",
-      "n8nWebhook": "enc:04c551872bc6fcd131b3d654ad18c563:5045f3fe3be02c6f8b30808e7fca103d769b5e594430cab32bc19c02e2c5ae962514595a6fc3016fd880fdc68bb4a22fbe531e0e2064b921ecccf0c70917f1b32d8b0b6a80dc9e713559485222de4b2e",
+      "n8nWebhook": "enc:6c335546f2c9f25336febfa5bba4ebd5:5738df2dfc0913d79d40ea48d5ea88cb9500d89901b8016a42b98288ad07d482e0e8e06cda9517f8b7876fe93776e1ad60b3b4a45d3aad2c62242e037d9e3a5d4dab6d7adc87d4eaa56f3d0a1c0e97ce",
       "updatedAt": "2026-05-23T12:57:48.418Z"
     },
     "jayabharathi store": {
       "siteId": "jayabharathi store",
       "groqKey": "",
-      "geminiKey": "enc:0d689101de1dbb73135718342e617bf3:58f6ef20dc5b5157cd9a128680045bca4f1ca4485a2dfbe28f78e1ae7c8df3e7",
-      "githubToken": "enc:fb55c8861af309db134f8ce32dadf41f:9337e1daec9fa590322b9ef53d3e53ac966457531aad3c69ee7f24cea00a618f17beedf772204545f835ebb2fa106f06",
+      "geminiKey": "enc:e24a7919a010d404d73ac7f455f47672:1ff6ac6f9c36a251cb6486426bed23399c7533dfeed2c6164e9615cae4bb1c81",
+      "githubToken": "enc:579034c85de772874a2ed60e4b735525:e16dbfeab41db9e55ccdd722a158a8c2bff4fd7c67610d5e73ea6f233d140898dbf49324ec57228040c7fb24c4c4507e",
       "githubRepo": "yogeshjio5770/test",
       "vercelDeployHook": "",
-      "n8nWebhook": "enc:6bbd594fc6a249e64189e7976c88912e:27c3ec8df5813bd3ecf6626aa23df9625e29c216f4a698056183353bacbab6f240a3be6d86c443a4a5ce61aef6e618e4c8c448675b34277a427573efbfc054b5a42a3b67009e05f6e5963873662b9d73",
+      "n8nWebhook": "enc:8ce01335c2686c20d91ea04f4db988f7:0e11d5126c181d593bf4ad4bd53b938106b11a92d060e105598449b83f106a7be6ba74670c4b0978f11d0c61e986d54e5bdebfd7d807ba66091ce355f64679ee89ff49425e0fc715078b81acaf60020a",
       "updatedAt": "2026-05-23T14:22:43.841Z"
     },
     "https://dqwq-2q4b09ry8-yogesh-s-projects6.vercel.app": {
@@ -278,13 +298,23 @@
     },
     "https://dqwq-jr2f3nryf-yogesh-s-projects6.vercel.app": {
       "siteId": "https://dqwq-jr2f3nryf-yogesh-s-projects6.vercel.app",
-      "groqKey": "enc:7c0bd9807684f7908dbeb2842d458ca8:30b6f5f9a232614e2bf0e7802d2b2bfc3470b6309153dfa1580ffc98ab0e52e1d4ecfa0595fd285e7a62de9bb6ce52b0887e72f87165bd418d817613f1ad7995",
+      "groqKey": "enc:6a97b0f2d94c1d145338367f7ffdea99:695cf890c1cb4d91238ccbb2319f5b99e9e84a38417542090b9d648fc0e286b736509720ddbf4415b2a364fdf71287b79fd253ee8113928b9382319688ca5155",
       "geminiKey": "",
-      "githubToken": "enc:0bbac3ec68a64d467964353229b4c3c7:d2399a8c1be7b35e12e82c1e5169ef96153d6f8f32baf144ccdb85ce8b40e54ec41a0cf08ebbdc1478b69ef875826570",
+      "githubToken": "enc:f3ff751328972945a78b469fb2a83ee7:6aa7c51dfa213ce05f1148cff9cf5cbe95951be5f988931fa09d9785fb87ac4e00aace996ffa908f8ac4c4c08bfd6ec6",
       "githubRepo": "yogeshjio5770/dqwq",
       "vercelDeployHook": "",
-      "n8nWebhook": "enc:5381b0be5c536c0b86227d212abd31ea:6372b8299dfc583ff91761aa3b62d1d873760c3411ac2ec7909948dea5e930e7c5b33340f9cff076eefab68854670a06ca351808cddb73a339fc1a27840b201d56c62c012624493a57f07e0119fdaac6",
+      "n8nWebhook": "enc:7421f1ca2d827f4d1719df4716605588:9f759d3b58eb897c2ffe79e9e4a7cbd6fb255490242a54897fe6296dae1aa991b69e7830564b420759daf19fa5435609cd73e525bbb748c4a8d16a3909babf0acc75bd0fac99e9e45a036d485d77815c",
       "updatedAt": "2026-05-23T14:30:55.409Z"
+    },
+    "dqwq-2tyr0eost-yogesh-s-projects6.vercel.app": {
+      "siteId": "dqwq-2tyr0eost-yogesh-s-projects6.vercel.app",
+      "groqKey": "",
+      "geminiKey": "",
+      "githubToken": "",
+      "githubRepo": "",
+      "vercelDeployHook": "",
+      "n8nWebhook": "",
+      "updatedAt": "2026-05-23T14:52:42.173Z"
     }
   }
 }
